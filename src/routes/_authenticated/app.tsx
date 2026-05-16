@@ -6,6 +6,7 @@ import { Flame, Plus, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { listUserTracks } from "@/lib/elevate.functions";
 import { trackHueGradient, trackHueVar } from "@/lib/categories";
+import { MomentumHero } from "@/components/momentum-hero";
 
 export const Route = createFileRoute("/_authenticated/app")({ component: Dashboard });
 
@@ -68,13 +69,8 @@ function Dashboard() {
         <p className="mt-3 text-base text-foreground max-w-md leading-snug">{motivation}</p>
       </motion.header>
 
-      {/* Stat strip */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
-        className="grid grid-cols-3 gap-3 mb-8">
-        <Stat label="Active" value={String(data?.length ?? 0)} hue="text-electric text-yellow-400" />
-        <Stat label="Streak" value={String(totalStreak)} hue="text-sunset" icon={<Flame className="h-4 w-4 flame text-[color:var(--highlight)]"/>}/>
-        <Stat label="Today" value={String((data ?? []).filter((d:any)=>d.last_check_in_date === new Date().toISOString().slice(0,10)).length)} hue="text-aurora" suffix={`/${data?.length ?? 0}`}/>
-      </motion.div>
+      {/* Momentum hero — score, evolution, flow mode, at-risk alerts */}
+      {data && data.length > 0 && <MomentumHero tracks={data as any} />}
 
       {/* Active paths — tall vivid horizontal scroll */}
       <div className="flex items-end justify-between mb-4">
