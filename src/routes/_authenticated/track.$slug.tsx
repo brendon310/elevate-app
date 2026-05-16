@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Flame, ArrowLeft, Send, Check, Lock, Sparkles, Trophy, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   getJourney, startJourney, completeJourneyDay, ensureDaysGenerated,
   getReEntryMessage, getMilestoneMessage, sendCoachMessage, getTrackDetail,
@@ -136,6 +137,7 @@ function JourneyView({ slug, data }: any) {
   const [note, setNote] = useState("");
   const [milestone, setMilestone] = useState<{ day: number; message: string; science: string } | null>(null);
   const [reentry, setReentry] = useState<string | null>(null);
+  const [burst, setBurst] = useState(false);
 
   // Auto-generate next chunk when within 3 days of edge
   useEffect(() => {
@@ -170,6 +172,7 @@ function JourneyView({ slug, data }: any) {
     mutationFn: (dayId: string) => completeFn({ data: { dayId, note: note.trim() || undefined } }),
     onSuccess: async (r: any) => {
       setNote(""); setOpenDay(null);
+      setBurst(true); setTimeout(()=>setBurst(false), 1200);
       qc.invalidateQueries({ queryKey: ["journey", slug] });
       qc.invalidateQueries({ queryKey: ["userTracks"] });
       if (r?.milestoneHit) {
@@ -185,24 +188,65 @@ function JourneyView({ slug, data }: any) {
   });
 
   const progress = Math.round((days.filter((d:any)=>d.completed_at).length / journey.total_days) * 100);
+  const identityVerb = catalog.name.toLowerCase().split(/\s+/).slice(-1)[0].replace(/[^a-z]/g,"");
+  const hasIdentity = userTrack.current_streak >= 21;
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <div className="container mx-auto px-6 py-8 max-w-4xl relative">
+      {/* particle burst */}
+      <AnimatePresence>
+        {burst && (
+          <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center">
+            {Array.from({ length: 28 }).map((_, i) => {
+              const angle = (i / 28) * Math.PI * 2;
+              const dist = 120 + Math.random() * 100;
+              return (
+                <motion.span key={i}
+                  initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                  animate={{ x: Math.cos(angle)*dist, y: Math.sin(angle)*dist, opacity: 0, scale: 0.4 }}
+                  transition={{ duration: 0.9, ease: [0.2,0.8,0.2,1] }}
+                  className="absolute h-2 w-2 rounded-full"
+                  style={{ background: i % 2 ? "var(--primary)" : "var(--secondary)" }}/>
+              );
+            })}
+          </div>
+        )}
+      </AnimatePresence>
+
       <Link to="/app" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="h-4 w-4"/> Back</Link>
 
-      <header className="glass rounded-3xl p-6 relative overflow-hidden">
-        <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full ${CATEGORY_CLASS[catalog.category]} opacity-40 blur-3xl`}/>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">{catalog.category}</p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">{catalog.name}</h1>
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-          <div className="flex items-center gap-2 font-semibold"><Flame className="h-5 w-5 text-primary"/>{userTrack.current_streak} day streak</div>
-          <div className="text-muted-foreground">Day {currentDayNumber} of {journey.total_days}</div>
-          <div className="text-muted-foreground">{progress}% complete</div>
+      <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+        className="warm-card rounded-[2rem] p-8 relative overflow-hidden ambient-warm">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-primary">{catalog.category}</p>
+        <h1 className="font-display text-4xl md:text-5xl tracking-tight mt-2 font-light">{catalog.name}</h1>
+        {hasIdentity && (
+          <p className="mt-3 font-display italic text-base text-foreground/80">
+            You are someone who {identityVerb}s.
+          </p>
+        )}
+        <div className="mt-6 flex flex-wrap items-end gap-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Streak</p>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <Flame className="h-5 w-5 text-primary self-center"/>
+              <span className="font-display italic text-4xl text-gradient leading-none">{userTrack.current_streak}</span>
+              <span className="text-xs text-muted-foreground">days</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Day</p>
+            <p className="font-display italic text-3xl mt-1 leading-none">{currentDayNumber}<span className="text-muted-foreground text-base"> / {journey.total_days}</span></p>
+          </div>
+          <div className="flex-1 min-w-[160px]">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{progress}% complete</p>
+            <div className="mt-2 h-1.5 w-full rounded-full bg-accent/60 overflow-hidden">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                transition={{ type: "spring", stiffness: 70, damping: 18 }}
+                className="h-full grad-warm" />
+            </div>
+          </div>
         </div>
-        <div className="mt-3 h-1.5 w-full rounded-full bg-accent overflow-hidden">
-          <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-        </div>
-      </header>
+      </motion.header>
 
       {reentry && (
         <section className="mt-4 glass rounded-2xl p-5 border border-primary/30">
@@ -217,10 +261,11 @@ function JourneyView({ slug, data }: any) {
       )}
 
       {today && (
-        <section className="mt-6 glass rounded-3xl p-6 relative overflow-hidden">
-          <p className="text-xs uppercase tracking-widest text-primary">Today · Day {today.day_number}</p>
-          <h2 className="text-2xl font-bold mt-1">{today.title}</h2>
-          <p className="text-sm text-muted-foreground mt-2">{today.description}</p>
+        <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+          className="mt-6 warm-card rounded-[2rem] p-8 relative overflow-hidden">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Today · Day {today.day_number}</p>
+          <h2 className="font-display text-3xl mt-2 leading-tight">{today.title}</h2>
+          <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{today.description}</p>
 
           <div className="mt-5 grid gap-3">
             <div className="rounded-2xl bg-accent/50 p-4">
@@ -241,16 +286,16 @@ function JourneyView({ slug, data }: any) {
             <div className="mt-5">
               <textarea value={note} onChange={e=>setNote(e.target.value)}
                 placeholder={today.checkin_prompt}
-                className="w-full rounded-xl bg-input border border-border p-3 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[80px]" />
+                className="w-full rounded-2xl bg-input border border-border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition" />
               <button onClick={()=>complete.mutate(today.id)} disabled={complete.isPending}
-                className="mt-3 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold disabled:opacity-50 inline-flex items-center gap-2">
-                <Check className="h-4 w-4"/> Complete day {today.day_number}
+                className={`mt-4 rounded-full grad-warm text-background px-6 py-3 text-sm font-medium shadow-[var(--shadow-glow)] disabled:opacity-50 inline-flex items-center gap-2 ${complete.isPending ? "breathe" : ""}`}>
+                <Check className="h-4 w-4"/> {complete.isPending ? "Listening…" : `Complete day ${today.day_number}`}
               </button>
             </div>
           ) : (
-            <div className="mt-5 text-sm text-primary inline-flex items-center gap-2"><Check className="h-4 w-4"/> Completed</div>
+            <div className="mt-5 text-sm text-primary inline-flex items-center gap-2 font-display italic"><Check className="h-4 w-4"/> Completed</div>
           )}
-        </section>
+        </motion.section>
       )}
 
       <section className="mt-6 glass rounded-2xl p-5">

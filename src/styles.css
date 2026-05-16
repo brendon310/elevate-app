@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -30,6 +31,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-success: var(--success);
   --color-fitness: var(--fitness);
   --color-mental: var(--mental);
   --color-quit: var(--quit);
@@ -38,67 +40,148 @@
 }
 
 :root {
-  --radius: 1rem;
-  --background: oklch(0.16 0.012 260);
-  --foreground: oklch(0.97 0.005 80);
-  --card: oklch(0.20 0.015 260);
-  --card-foreground: oklch(0.97 0.005 80);
-  --popover: oklch(0.20 0.015 260);
-  --popover-foreground: oklch(0.97 0.005 80);
-  --primary: oklch(0.88 0.12 85);
-  --primary-foreground: oklch(0.18 0.02 260);
-  --secondary: oklch(0.27 0.02 260);
-  --secondary-foreground: oklch(0.97 0.005 80);
-  --muted: oklch(0.24 0.015 260);
-  --muted-foreground: oklch(0.68 0.02 260);
-  --accent: oklch(0.30 0.04 260);
-  --accent-foreground: oklch(0.97 0.005 80);
-  --destructive: oklch(0.62 0.22 25);
+  --radius: 1.25rem;
+
+  /* Organic Futurism — warm dark */
+  --background: oklch(0.16 0.012 55);    /* #0D0A07-ish */
+  --foreground: oklch(0.94 0.025 80);    /* #F5EDD8 cream */
+  --card: oklch(0.20 0.018 50);          /* #1A1410 surface */
+  --card-foreground: oklch(0.94 0.025 80);
+  --popover: oklch(0.20 0.018 50);
+  --popover-foreground: oklch(0.94 0.025 80);
+
+  --primary: oklch(0.78 0.115 55);       /* #E8A87C warm amber */
+  --primary-foreground: oklch(0.18 0.02 50);
+  --secondary: oklch(0.62 0.135 40);     /* #C4785A terracotta */
+  --secondary-foreground: oklch(0.96 0.02 80);
+
+  --muted: oklch(0.24 0.018 50);
+  --muted-foreground: oklch(0.62 0.035 60); /* #8C7B6B */
+  --accent: oklch(0.27 0.025 50);
+  --accent-foreground: oklch(0.94 0.025 80);
+
+  --destructive: oklch(0.60 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.28 0.02 260);
-  --input: oklch(0.26 0.02 260);
-  --ring: oklch(0.70 0.10 85);
 
-  --fitness: oklch(0.67 0.21 25);
-  --mental: oklch(0.65 0.18 275);
-  --quit: oklch(0.58 0.22 18);
-  --learning: oklch(0.70 0.13 195);
-  --productivity: oklch(0.78 0.15 80);
+  --success: oklch(0.72 0.13 140);       /* #7FB069 */
 
-  --grad-fitness: linear-gradient(135deg, oklch(0.68 0.22 28), oklch(0.55 0.20 10));
-  --grad-mental: linear-gradient(135deg, oklch(0.68 0.19 280), oklch(0.50 0.18 260));
+  --border: oklch(0.28 0.022 50);
+  --input: oklch(0.24 0.02 50);
+  --ring: oklch(0.78 0.115 55);
+
+  /* Category accents — all warm */
+  --fitness: oklch(0.65 0.18 30);
+  --mental: oklch(0.70 0.10 70);
+  --quit: oklch(0.58 0.20 18);
+  --learning: oklch(0.72 0.12 80);
+  --productivity: oklch(0.78 0.115 55);
+
+  --grad-fitness: linear-gradient(135deg, oklch(0.70 0.20 35), oklch(0.50 0.22 18));
+  --grad-mental: linear-gradient(135deg, oklch(0.72 0.12 75), oklch(0.55 0.13 50));
   --grad-quit: linear-gradient(135deg, oklch(0.62 0.22 20), oklch(0.40 0.18 15));
-  --grad-learning: linear-gradient(135deg, oklch(0.72 0.14 195), oklch(0.50 0.13 215));
-  --grad-productivity: linear-gradient(135deg, oklch(0.80 0.16 80), oklch(0.62 0.18 50));
+  --grad-learning: linear-gradient(135deg, oklch(0.75 0.13 85), oklch(0.55 0.14 50));
+  --grad-productivity: linear-gradient(135deg, oklch(0.82 0.12 65), oklch(0.62 0.14 40));
+  --grad-warm: linear-gradient(135deg, oklch(0.78 0.115 55), oklch(0.55 0.155 30));
 
-  --shadow-glow: 0 30px 80px -30px oklch(0.88 0.12 85 / 0.25);
-  --shadow-card: 0 8px 30px -12px oklch(0 0 0 / 0.5);
+  /* Warm-tinted shadows */
+  --shadow-warm: 0 20px 60px -20px oklch(0.55 0.18 40 / 0.30);
+  --shadow-glow: 0 30px 80px -30px oklch(0.78 0.115 55 / 0.45);
+  --shadow-card: 0 12px 40px -16px oklch(0.10 0.02 40 / 0.6);
+
+  /* Grain texture — fractal noise SVG */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.86 0 0 0 0 0.7 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); }
-  body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "ss02", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 50, "WONK" 0;
+    letter-spacing: -0.015em;
+  }
 }
 
 @layer utilities {
-  .glass {
-    background: color-mix(in oklab, var(--card) 70%, transparent);
-    backdrop-filter: blur(20px);
-    border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  .font-display { font-family: var(--font-display); }
+  .font-sans { font-family: var(--font-sans); }
+
+  .grain-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background-image: var(--grain);
+    background-size: 220px 220px;
+    opacity: 0.06;
+    mix-blend-mode: overlay;
   }
+
+  .glass {
+    background: color-mix(in oklab, var(--card) 78%, transparent);
+    backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 7%, transparent);
+    box-shadow: var(--shadow-card);
+  }
+  .warm-card {
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--card) 90%, transparent),
+      color-mix(in oklab, var(--card) 70%, transparent));
+    border: 1px solid color-mix(in oklab, var(--primary) 12%, transparent);
+    box-shadow: var(--shadow-warm);
+    backdrop-filter: blur(20px);
+  }
+
   .grad-fitness { background-image: var(--grad-fitness); }
   .grad-mental { background-image: var(--grad-mental); }
   .grad-quit { background-image: var(--grad-quit); }
   .grad-learning { background-image: var(--grad-learning); }
   .grad-productivity { background-image: var(--grad-productivity); }
+  .grad-warm { background-image: var(--grad-warm); }
+
   .text-gradient {
-    background: linear-gradient(135deg, oklch(0.95 0.10 85), oklch(0.75 0.15 50));
+    background: linear-gradient(135deg, oklch(0.94 0.07 75), oklch(0.72 0.16 40));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+
+  .ambient-warm::before {
+    content: ""; position: absolute; inset: -1px;
+    background: radial-gradient(60% 80% at 20% 0%, oklch(0.55 0.18 35 / 0.35), transparent 60%),
+                radial-gradient(40% 60% at 100% 100%, oklch(0.50 0.15 65 / 0.22), transparent 60%);
+    pointer-events: none; z-index: 0; border-radius: inherit;
+  }
+  .ambient-warm > * { position: relative; z-index: 1; }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 oklch(0.78 0.115 55 / 0.4); }
+    50% { transform: scale(1.02); box-shadow: 0 0 0 12px oklch(0.78 0.115 55 / 0); }
+  }
+  .breathe { animation: breathe 2.4s ease-in-out infinite; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, oklch(0.78 0.115 55 / 0.25), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.2s linear infinite;
+  }
+
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .rise-in { animation: rise-in 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
 }
 
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900;
-  src: url('https://rsms.me/inter/font-files/InterVariable.woff2') format('woff2'); font-display: swap; }
+/* Fonts loaded via Google Fonts <link> in __root.tsx head */

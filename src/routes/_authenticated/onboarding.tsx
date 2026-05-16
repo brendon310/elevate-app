@@ -1,65 +1,114 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
-import { listCatalog, activateTracks } from "@/lib/elevate.functions";
+import { suggestTrack, activateTracks } from "@/lib/elevate.functions";
 import { CATEGORY_CLASS } from "@/lib/categories";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({ component: Onboarding });
 
 function Onboarding() {
-  const list = useServerFn(listCatalog);
+  const suggest = useServerFn(suggestTrack);
   const act = useServerFn(activateTracks);
+  const qc = useQueryClient();
   const nav = useNavigate();
-  const { data } = useQuery({ queryKey: ["catalog"], queryFn: () => list() });
-  const [picked, setPicked] = useState<string[]>([]);
-  const m = useMutation({
-    mutationFn: (ids: string[]) => act({ data: { trackIds: ids } }),
-    onSuccess: () => { toast.success("Your tracks are ready"); nav({ to: "/app" }); },
+  const [step, setStep] = useState<"q" | "thinking" | "reveal">("q");
+  const [answer, setAnswer] = useState("");
+  const [result, setResult] = useState<any>(null);
+
+  const ask = useMutation({
+    mutationFn: () => suggest({ data: { answer } }),
+    onMutate: () => setStep("thinking"),
+    onSuccess: (r) => { setResult(r); setStep("reveal"); },
+    onError: (e: any) => { toast.error(e.message); setStep("q"); },
+  });
+
+  const commit = useMutation({
+    mutationFn: () => act({ data: { trackIds: [result.track.id] } }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["userTracks"] });
+      nav({ to: "/track/$slug", params: { slug: result.track.slug } });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const toggle = (id: string) => setPicked(p => p.includes(id) ? p.filter(x=>x!==id) : p.length < 5 ? [...p, id] : p);
-
-  const grouped = (data ?? []).reduce((acc: any, t: any) => { (acc[t.category] ||= []).push(t); return acc; }, {});
-
   return (
-    <div className="container mx-auto px-6 py-10 max-w-4xl">
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Pick your <span className="text-gradient">top 5</span></h1>
-      <p className="mt-2 text-muted-foreground">Start small. You can add more anytime. {picked.length}/5 selected.</p>
+    <div className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10
+        bg-[radial-gradient(60%_60%_at_50%_30%,oklch(0.50_0.18_40_/_0.4),transparent_70%)]" />
 
-      <div className="mt-8 space-y-8">
-        {Object.entries(grouped).map(([cat, tracks]: any) => (
-          <section key={cat}>
-            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">{cat}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {tracks.map((t: any) => {
-                const on = picked.includes(t.id);
-                return (
-                  <button key={t.id} onClick={()=>toggle(t.id)}
-                    className={`relative text-left rounded-xl p-3 border transition ${on ? "border-primary bg-accent" : "border-border bg-card/50 hover:border-primary/30"}`}>
-                    <div className={`h-8 w-8 rounded-lg ${CATEGORY_CLASS[t.category]} flex items-center justify-center text-background text-[10px] font-bold mb-2`}>
-                      {t.name.slice(0,2).toUpperCase()}
-                    </div>
-                    <p className="text-sm font-medium">{t.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{t.short_description}</p>
-                    {on && <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check className="h-3 w-3"/></div>}
-                  </button>
-                );
-              })}
+      <AnimatePresence mode="wait">
+        {step === "q" && (
+          <motion.div key="q" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.6, ease: [0.2,0.8,0.2,1] }}
+            className="max-w-2xl w-full text-center">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-8">One question</p>
+            <h1 className="font-display text-[clamp(2rem,6vw,4rem)] leading-[1.05] tracking-[-0.03em] font-light">
+              What is the one thing that,<br/>
+              <span className="italic text-gradient">if you changed it</span>,<br/>
+              would change everything?
+            </h1>
+            <form onSubmit={(e) => { e.preventDefault(); if (answer.trim().length >= 3) ask.mutate(); }} className="mt-12">
+              <textarea
+                autoFocus value={answer} onChange={(e)=>setAnswer(e.target.value.slice(0, 500))}
+                placeholder="Take your time. Be honest."
+                className="w-full bg-transparent border-0 border-b border-border focus:border-primary outline-none
+                  text-center font-display text-2xl italic placeholder:text-muted-foreground/40
+                  py-4 px-2 resize-none min-h-[120px] transition-colors"
+              />
+              <button type="submit" disabled={answer.trim().length < 3}
+                className="mt-8 inline-flex items-center gap-2 rounded-full grad-warm text-background
+                  px-7 py-3.5 text-sm font-medium shadow-[var(--shadow-glow)] disabled:opacity-30 transition">
+                Continue <ArrowRight className="h-4 w-4" />
+              </button>
+              <p className="mt-6 text-xs text-muted-foreground">
+                Or <Link to="/tracks" className="underline underline-offset-4 hover:text-foreground">browse all 50 paths</Link>
+              </p>
+            </form>
+          </motion.div>
+        )}
+
+        {step === "thinking" && (
+          <motion.div key="t" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="text-center">
+            <div className="mx-auto h-20 w-20 rounded-full grad-warm breathe flex items-center justify-center">
+              <Sparkles className="h-8 w-8 text-background" />
             </div>
-          </section>
-        ))}
-      </div>
+            <p className="mt-8 font-display italic text-xl text-muted-foreground">Listening to what you said…</p>
+          </motion.div>
+        )}
 
-      <div className="sticky bottom-4 mt-10 flex justify-center">
-        <button disabled={picked.length===0 || m.isPending} onClick={()=>m.mutate(picked)}
-          className="rounded-full bg-primary text-primary-foreground px-8 py-3 font-semibold shadow-[var(--shadow-glow)] disabled:opacity-40">
-          {m.isPending ? "Activating…" : `Activate ${picked.length} track${picked.length===1?"":"s"}`}
-        </button>
-      </div>
+        {step === "reveal" && result?.track && (
+          <motion.div key="r" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.2,0.8,0.2,1] }}
+            className="max-w-xl w-full text-center">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-primary mb-6">Your first path</p>
+            <div className={`mx-auto h-16 w-16 rounded-2xl ${CATEGORY_CLASS[result.track.category]} flex items-center justify-center
+              text-background font-display text-xl shadow-[var(--shadow-glow)] mb-6`}>
+              {result.track.name.slice(0,2)}
+            </div>
+            <h1 className="font-display text-4xl md:text-5xl tracking-tight">{result.track.name}</h1>
+            <p className="mt-3 text-xs uppercase tracking-[0.3em] text-muted-foreground">{result.track.category}</p>
+            <p className="mt-8 font-display italic text-xl leading-relaxed text-foreground/90">"{result.reason}"</p>
+            {result.identity && (
+              <p className="mt-6 text-sm text-primary">{result.identity}</p>
+            )}
+            <div className="mt-10 flex flex-col items-center gap-4">
+              <button onClick={()=>commit.mutate()} disabled={commit.isPending}
+                className="inline-flex items-center gap-2 rounded-full grad-warm text-background
+                  px-8 py-3.5 text-sm font-medium shadow-[var(--shadow-glow)] disabled:opacity-50">
+                {commit.isPending ? "Committing…" : "I'm in. Begin."}
+              </button>
+              <button onClick={()=>{ setStep("q"); setResult(null); }} className="text-xs text-muted-foreground hover:text-foreground">
+                Ask me again
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

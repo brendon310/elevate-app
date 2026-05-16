@@ -1,87 +1,75 @@
-# Elevate — Build Plan
 
-A premium, AI-powered self-improvement companion with 50 specialized AI coaches, streaks, dashboards, and weekly insights.
+# Elevate v2 — "Organic Futurism" elevation
 
-## Scope for v1
+This is a huge brief. To ship something that actually feels premium (not half-done across 15 features), I'll deliver it in 3 phases. Phase 1 is the visual + identity overhaul that makes the whole app feel like a funded startup on first open — that alone changes the perception of every existing screen. Phases 2 and 3 layer in the new features on top of that foundation.
 
-Building all 50 tracks with full depth (onboarding interview, milestone roadmap, daily AI check-ins, pattern analysis, crisis support, weekly insight reports, push notifications) in a single pass would produce a thin, unstable app. I'll ship a strong, real v1 that covers the full surface and can be deepened iteratively.
+I'll start Phase 1 immediately on approval. Phases 2 and 3 ship in follow-up turns so each one gets real care instead of being rushed.
 
-**In v1:**
-- Auth (email/password + Google) with persistent storage
-- All 50 tracks defined with category, color, icon, and a specialized AI system prompt referencing real frameworks (NRT/CBT/Allen Carr, progressive overload, MBSR, etc.)
-- Onboarding: pick top 5 tracks to start
-- Dashboard: active tracks with streak counters, completion rings, momentum score, overall Elevate Score
-- Per-track page: daily log, progress chart, GitHub-style heatmap, milestone map, AI chat
-- AI chat per track using **Lovable AI Gateway** (not Anthropic directly — explained below), with full per-track conversation history persisted
-- Streak logic with freeze/grace days
-- Weekly AI-generated insight report (on-demand generation button in v1)
-- Dark premium aesthetic, smooth micro-animations, mobile-first
+---
 
-**Deferred to follow-ups (called out so you can prioritize):**
-- Real push notifications (requires native app or web-push infra setup) — v1 shows in-app daily check-in reminders
-- Automated daily AI check-in messages (cron) — v1 triggers them when the user opens the track
-- Deep onboarding interview flow per track — v1 uses a structured intake form + first AI message; can be expanded
-- Crisis-support escalation UX
+## Phase 1 — Design system overhaul + core micro-interactions (this turn)
 
-## Important technical note: AI provider
+The single biggest lever. Touches every screen.
 
-You asked for Anthropic Claude API. Lovable has a built-in **Lovable AI Gateway** that already includes credits, requires no key setup, and supports top models (Gemini 3, GPT-5.x families). It's the recommended path and avoids you having to manage an Anthropic key, billing, and rate limits.
+**Design tokens (`src/styles.css`)**
+- Replace palette with the warm dark system:
+  - `--background: #0D0A07`, `--surface: #1A1410`
+  - `--primary: #E8A87C` (amber), `--secondary: #C4785A` (terracotta)
+  - `--foreground: #F5EDD8` (cream), `--muted-foreground: #8C7B6B`
+  - `--success: #7FB069`
+- Kill Inter. Load **Fraunces** (variable serif, opsz + soft axis) for headlines/milestones and **Sora** for body/UI via Google Fonts.
+- Add a global SVG-noise grain overlay at 3% opacity (fixed, pointer-events-none).
+- New shadow tokens: warm-tinted (`0 20px 60px -20px rgba(232,168,124,.18)`) instead of black.
+- Editorial type scale (display / serif-italic accents on numbers like streak counts and day numbers).
 
-I'll use Lovable AI Gateway with `google/gemini-3-flash-preview` as the default coach model (fast, cheap, strong). If you specifically want Anthropic Claude, tell me and I'll switch — you'd need to add an `ANTHROPIC_API_KEY` secret.
+**Component pass**
+- Rebuild Button, Card, Slider variants to match (no more flat gray cards).
+- New primitives: `<DisplayHeading>` (Fraunces), `<StatNumber>` (Fraunces italic), `<GrainOverlay>`, `<WarmCard>` with layered soft glow.
+- Landing, login, dashboard, onboarding, track detail, insights, settings all re-skinned with the new system. Mix full-bleed sections + overlapping elements on dashboard and track detail (no uniform card grid).
 
-## Backend (Lovable Cloud)
+**Micro-interactions**
+- Spring-physics progress ring on track detail (Framer Motion).
+- Particle burst on day completion (lightweight canvas, ~40 particles, amber/terracotta).
+- Breathing pulse on the check-in submit button while the AI streams.
+- Page transitions: subtle fade + 8px rise.
 
-I'll enable Lovable Cloud (Supabase under the hood) for auth + database.
+**Identity framing (cheap to add, huge payoff)**
+- After 21 days on a track, the dashboard headline shifts from "Day 21" to "You are someone who {verb}s." Stored as a derived state from `journeys.day_number` — no schema change.
 
-**Tables:**
-- `profiles` — user profile (display name, avatar, elevate_score_cached)
-- `tracks_catalog` — the 50 tracks (seeded): id, slug, name, category, color, icon, description, ai_system_prompt, frameworks
-- `user_tracks` — user's activated tracks: user_id, track_id, started_at, current_streak, longest_streak, freezes_remaining, status
-- `track_logs` — daily check-ins: user_id, user_track_id, date, completed, mood, note
-- `track_messages` — AI chat history per track: user_id, user_track_id, role, content, created_at
-- `milestones` — user_track_id, label (day 1, week 1, month 1, ...), target_date, achieved_at
-- `insights` — weekly AI reports: user_id, week_start, content_json
+---
 
-RLS on every table scoped to `auth.uid()`. Roles in separate table not needed for v1.
+## Phase 2 — Mood/energy, Shields, Science library, Weekly Letter, Relapse protocol (next turn)
 
-## Frontend structure (TanStack Start)
+- **Mood & energy**: extend `track_logs` (already has `mood`) with `energy int`; add pre-check-in slider step; AI prompt updated to correlate patterns.
+- **Shields**: add `shields int default 0` to `user_tracks`; +1 per 7-day streak; spend to protect a missed day. Replaces the existing `freezes_remaining` field (rename + UI).
+- **Science library**: new `science_cards` table (track_id, title, body, sort). Seed 10 cards for each of the 50 tracks via one AI generation pass on first view (cached). Editorial card layout.
+- **Weekly AI letter**: rework `insights` content prompt to write a warm personal letter (not a report). Sunday auto-generate via pg_cron + `/api/public/hooks/weekly-letter`.
+- **Relapse protocol**: new "I relapsed" button on addiction-category tracks → dedicated flow (trigger analysis → 24h re-entry plan → research citation), no streak shame.
 
-```text
-src/routes/
-  index.tsx                  Landing (logged out) / redirect to /app (logged in)
-  login.tsx                  Email + Google sign-in
-  _authenticated.tsx         Auth gate
-  _authenticated/
-    onboarding.tsx           Pick top 5 tracks
-    app.tsx                  Main dashboard (active tracks, Elevate Score, heatmap summary)
-    tracks.tsx               Browse/add tracks (all 50)
-    track.$slug.tsx          Per-track page: log, chart, heatmap, milestones, AI chat
-    insights.tsx             Weekly AI insight report
-    settings.tsx             Profile + sign out
-  api/chat.ts                Server route for AI coach streaming (Lovable AI Gateway)
-```
+---
 
-Server functions for: activating a track, logging a check-in, computing streaks, generating insight reports, listing tracks, etc.
+## Phase 3 — Voice check-ins, Community, Partner mode, Body map, Transformation artifacts, Legacy journal, Paywall (turn after)
 
-## Design
+- **Voice check-ins**: ElevenLabs scribe_v2 batch transcription via server fn; store transcript + emotion analysis.
+- **Anonymous community**: `community_posts` table (user_id, track_id, day_number, sentence). No likes, no follows. Chronological feed per track.
+- **Partner mode**: `partners` table; invite link; partner sees streak + mood trend only; 1 message/day.
+- **Body map**: SVG silhouette, highlight regions from active tracks (static mapping table in code).
+- **Transformation artifacts**: AI-generated illustrated cards at milestone days (gpt-image/gemini-image), saved to storage, gallery view.
+- **Legacy journal**: end-of-journey PDF via the docx/pdf skill, narrative composed by AI from all check-ins.
+- **Paywall**: `subscriptions` table; gate voice/letter/partner/library/journal behind Pro; elegant unlock UI. Stripe wiring deferred to a follow-up so we can pick provider properly.
 
-Dark premium: deep near-black background, warm off-white text, accent gradients per track category (fitness=ember, mental=indigo, quit=crimson, learning=teal, productivity=amber). Inter/Geist body, tight type, generous spacing. Subtle glass cards, ring progress, GitHub-style heatmap grid, satisfying spring animations on check-in (Motion). Mobile-first with a bottom tab bar on small screens, sidebar on desktop.
+---
 
-## Implementation order
+## Cinematic onboarding (folded into Phase 1)
 
-1. Enable Lovable Cloud, create schema + RLS, seed the 50 tracks catalog with curated AI system prompts and frameworks per track
-2. Design system (tokens, gradients, fonts) in `src/styles.css`
-3. Auth (login/signup + Google) + `_authenticated` gate + onboarding (pick 5)
-4. Dashboard with active tracks, streaks, Elevate Score, heatmap summary
-5. Per-track page: log, chart, heatmap, milestones
-6. AI chat per track via `/api/chat` server route (Lovable AI Gateway, streaming) with persisted history
-7. Weekly insight report generation
-8. Polish: micro-animations, empty states, mobile bottom nav
+First-open flow gets replaced: single full-bleed question "What is the one thing that, if you changed it, would change everything?" → free text → AI suggests one track from the 50 → user commits. Existing multi-select onboarding becomes a secondary "add more tracks" flow.
 
-## Confirm before I start
+---
 
-1. **AI provider**: OK to use Lovable AI Gateway (no key needed) instead of Anthropic? Or do you want Anthropic specifically?
-2. **Sign-in methods**: Email/password + Google OK?
-3. **Scope**: Ship the v1 above and iterate on deferred items (real push, automated daily check-ins, deep per-track onboarding interview), or do you want any of those moved into v1?
+## What I will NOT do without confirmation
 
-Reply "go" with answers and I'll build it.
+- Add Stripe/Paddle (Phase 3 includes paywall UI but real billing needs the payments workflow).
+- Send real push notifications (still deferred — requires native shell or web-push setup).
+- Add background image generation for every milestone proactively (expensive); generated on unlock instead.
+
+Approve and I'll ship Phase 1 now.
