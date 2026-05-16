@@ -15,19 +15,21 @@ export const CATEGORY_TEXT: Record<string, string> = {
 };
 
 export const CATEGORY_SHADOW: Record<string, string> = {
-  "Fitness & Body": "depth-coral",
-  "Mental Health": "depth-violet",
-  "Quit Bad Habits": "depth-coral",
+  "Fitness & Body": "depth-red",
+  "Mental Health": "depth-green",
+  "Quit Bad Habits": "depth-yellow",
   "Mind & Learning": "depth-violet",
-  "Productivity & Life": "depth-mint",
+  "Productivity & Life": "depth-violet",
 };
 
-/* 12 vivid distinct hues — every track gets its own truly different color */
-const HUE_VARS = [
-  "--hue-violet", "--hue-coral", "--hue-mint", "--hue-yellow",
-  "--hue-pink", "--hue-cyan", "--hue-orange", "--hue-lime",
-  "--hue-sky", "--hue-magenta", "--hue-red", "--hue-teal",
-] as const;
+/* Category-driven accent — only one of red/green/yellow/white/gray per track */
+const CATEGORY_HUE: Record<string, string> = {
+  "Fitness & Body": "--fitness",
+  "Mental Health": "--mental",
+  "Quit Bad Habits": "--quit",
+  "Mind & Learning": "--learning",
+  "Productivity & Life": "--productivity",
+};
 
 function hashStr(s: string): number {
   let h = 0;
@@ -35,17 +37,26 @@ function hashStr(s: string): number {
   return Math.abs(h);
 }
 
-export function trackHueVar(seed: string): string {
-  return HUE_VARS[hashStr(seed) % HUE_VARS.length];
+export function trackHueVar(seed: string, category?: string): string {
+  if (category && CATEGORY_HUE[category]) return CATEGORY_HUE[category];
+  return "--hue-white";
 }
 
-export function trackHueGradient(seed: string): string {
-  const a = HUE_VARS[hashStr(seed) % HUE_VARS.length];
-  const b = HUE_VARS[(hashStr(seed) + 5) % HUE_VARS.length];
-  return `linear-gradient(135deg, var(${a}), var(${b}))`;
+export function trackHueGradient(seed: string, _category?: string): string {
+  // Each track gets a slightly different grayscale shade — accent stays mono.
+  const shades = [
+    ["oklch(0.22 0 0)", "oklch(0.10 0 0)"],
+    ["oklch(0.20 0 0)", "oklch(0.09 0 0)"],
+    ["oklch(0.24 0 0)", "oklch(0.12 0 0)"],
+    ["oklch(0.18 0 0)", "oklch(0.08 0 0)"],
+    ["oklch(0.26 0 0)", "oklch(0.13 0 0)"],
+    ["oklch(0.21 0 0)", "oklch(0.11 0 0)"],
+  ];
+  const [a, b] = shades[hashStr(seed) % shades.length];
+  return `linear-gradient(160deg, ${a}, ${b})`;
 }
 
-export function trackHueShadow(seed: string): string {
-  const v = trackHueVar(seed);
+export function trackHueShadow(seed: string, category?: string): string {
+  const v = trackHueVar(seed, category);
   return `0 20px 50px -12px color-mix(in oklab, var(${v}) 60%, transparent), 0 4px 14px -4px color-mix(in oklab, var(${v}) 40%, transparent)`;
 }
