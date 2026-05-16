@@ -40,8 +40,8 @@ function TracksPage() {
               {tracks.map((t: any, i: number) => {
                 const on = activeIds.has(t.id);
                 const seed = t.slug || t.name;
-                const hueVar = trackHueVar(seed);
-                const grad = trackHueGradient(seed);
+                const hueVar = trackHueVar(seed, cat);
+                const grad = trackHueGradient(seed, cat);
                 return (
                   <motion.div key={t.id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
