@@ -7,6 +7,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { suggestTrack, activateTracks } from "@/lib/elevate.functions";
 import { trackHueGradient, trackHueVar } from "@/lib/categories";
+import { archetypeForSlug } from "@/lib/coach-archetypes";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({ component: Onboarding });
 
@@ -18,6 +19,8 @@ function Onboarding() {
   const [step, setStep] = useState<"q" | "thinking" | "reveal">("q");
   const [answer, setAnswer] = useState("");
   const [result, setResult] = useState<any>(null);
+  const [phase, setPhase] = useState<"reveal" | "contract">("reveal");
+  const [commitment, setCommitment] = useState("");
 
   const ask = useMutation({
     mutationFn: () => suggest({ data: { answer } }),
@@ -27,7 +30,15 @@ function Onboarding() {
   });
 
   const commit = useMutation({
-    mutationFn: () => act({ data: { trackIds: [result.track.id] } }),
+    mutationFn: () => act({ data: {
+      trackIds: [result.track.id],
+      contract: {
+        answer,
+        identity: result.identity,
+        commitment,
+        signed_at: new Date().toISOString(),
+      },
+    } }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["userTracks"] });
       nav({ to: "/track/$slug", params: { slug: result.track.slug } });
@@ -85,6 +96,8 @@ function Onboarding() {
           <motion.div key="r" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.2,0.8,0.2,1] }}
             className="max-w-xl w-full text-center">
+            {phase === "reveal" ? (
+            <>
             <p className="text-[11px] uppercase tracking-[0.35em] font-mono mb-6" style={{ color: `var(${trackHueVar(result.track.slug || result.track.name)})` }}>Your first path</p>
             <motion.div
               initial={{ rotateY: 180, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }}
@@ -99,16 +112,63 @@ function Onboarding() {
             {result.identity && (
                 <p className="mt-6 text-sm text-electric text-yellow-400 font-semibold">{result.identity}</p>
             )}
+            {(() => { const a = archetypeForSlug(result.track.slug); return (
+              <p className="mt-8 text-sm text-muted-foreground">
+                Your coach for this path will be <span className="font-semibold text-foreground">{a.name}</span> — {a.tagline.toLowerCase()}.
+              </p>
+            ); })()}
             <div className="mt-10 flex flex-col items-center gap-4">
-              <button onClick={()=>commit.mutate()} disabled={commit.isPending}
+              <button onClick={()=>setPhase("contract")}
                 className="btn-chunk inline-flex items-center gap-2 rounded-full grad-electric text-white
-                  px-9 py-4 text-sm font-bold shadow-[var(--shadow-violet)] disabled:opacity-50">
-                {commit.isPending ? "Committing…" : "I'm in. Begin."}
+                  px-9 py-4 text-sm font-bold shadow-[var(--shadow-violet)]">
+                Continue <ArrowRight className="h-4 w-4" />
               </button>
               <button onClick={()=>{ setStep("q"); setResult(null); }} className="text-xs text-muted-foreground hover:text-foreground">
                 Ask me again
               </button>
             </div>
+            </>
+            ) : (
+            <>
+              <p className="text-[11px] uppercase tracking-[0.35em] font-mono mb-6 text-muted-foreground">Your transformation contract</p>
+              <h1 className="font-display text-3xl md:text-4xl tracking-[-0.03em] leading-tight">
+                Make it real. <span className="text-electric">Sign it.</span>
+              </h1>
+              <div className="mt-8 text-left bg-white border border-border rounded-2xl p-6 space-y-4 shadow-sm">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-1">What I want to change</p>
+                  <p className="text-foreground leading-relaxed">"{answer}"</p>
+                </div>
+                {result.identity && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-1">Who I'm becoming</p>
+                    <p className="text-foreground font-semibold">{result.identity}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">My one small commitment for the first 7 days</p>
+                  <textarea
+                    autoFocus value={commitment} onChange={(e)=>setCommitment(e.target.value.slice(0,300))}
+                    placeholder="e.g. 10 minutes every morning, no excuses."
+                    className="w-full bg-transparent border-0 border-b border-border focus:border-foreground outline-none text-foreground py-2 resize-none min-h-[60px]"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
+                  Signed {new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}. This contract lives in your profile. Your coach will reference it.
+                </p>
+              </div>
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <button onClick={()=>commit.mutate()} disabled={commit.isPending || commitment.trim().length < 3}
+                  className="btn-chunk inline-flex items-center gap-2 rounded-full grad-electric text-white
+                    px-9 py-4 text-sm font-bold shadow-[var(--shadow-violet)] disabled:opacity-30">
+                  {commit.isPending ? "Signing…" : "I sign. Begin."}
+                </button>
+                <button onClick={()=>setPhase("reveal")} className="text-xs text-muted-foreground hover:text-foreground">
+                  Back
+                </button>
+              </div>
+            </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
