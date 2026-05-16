@@ -6,6 +6,7 @@ import { Flame, Plus, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { listUserTracks } from "@/lib/elevate.functions";
 import { trackHueGradient, trackHueVar } from "@/lib/categories";
+import { MomentumHero } from "@/components/momentum-hero";
 
 export const Route = createFileRoute("/_authenticated/app")({ component: Dashboard });
 
@@ -49,7 +50,6 @@ function Dashboard() {
     if (!isLoading && data && data.length === 0) nav({ to: "/onboarding" });
   }, [isLoading, data, nav]);
 
-  const totalStreak = (data ?? []).reduce((s: number, t: any) => s + (t.current_streak || 0), 0);
   const motivation = useMemo(() => MOTIVATIONS[new Date().getDate() % MOTIVATIONS.length], []);
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const hour = new Date().getHours();
@@ -68,13 +68,8 @@ function Dashboard() {
         <p className="mt-3 text-base text-foreground max-w-md leading-snug">{motivation}</p>
       </motion.header>
 
-      {/* Stat strip */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
-        className="grid grid-cols-3 gap-3 mb-8">
-        <Stat label="Active" value={String(data?.length ?? 0)} hue="text-electric text-yellow-400" />
-        <Stat label="Streak" value={String(totalStreak)} hue="text-sunset" icon={<Flame className="h-4 w-4 flame text-[color:var(--highlight)]"/>}/>
-        <Stat label="Today" value={String((data ?? []).filter((d:any)=>d.last_check_in_date === new Date().toISOString().slice(0,10)).length)} hue="text-aurora" suffix={`/${data?.length ?? 0}`}/>
-      </motion.div>
+      {/* Momentum hero — score, evolution, flow mode, at-risk alerts */}
+      {data && data.length > 0 && <MomentumHero tracks={data as any} />}
 
       {/* Active paths — tall vivid horizontal scroll */}
       <div className="flex items-end justify-between mb-4">
@@ -177,15 +172,3 @@ function Dashboard() {
   );
 }
 
-function Stat({ label, value, suffix, hue, icon }: { label: string; value: string; suffix?: string; hue: string; icon?: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl p-3.5 depth-card">
-      <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-mono mb-1.5 flex items-center gap-1.5">
-        {icon}{label}
-      </p>
-      <p className={`font-display text-3xl leading-none num ${hue}`}>
-        {value}{suffix && <span className="text-base text-muted-foreground">{suffix}</span>}
-      </p>
-    </div>
-  );
-}
