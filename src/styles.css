@@ -251,24 +251,11 @@
   .grad-sunset { background-image: var(--grad-sunset); }
   .grad-aurora { background-image: var(--grad-aurora); }
 
-  .text-gradient {
-    background: linear-gradient(135deg, oklch(1 0 0), oklch(0.60 0 0));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .text-electric {
-    background: linear-gradient(135deg, oklch(1 0 0), var(--hue-red));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .text-aurora {
-    background: linear-gradient(135deg, var(--hue-green), oklch(1 0 0));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .text-sunset {
-    background: linear-gradient(135deg, var(--hue-yellow), var(--hue-red));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
+  /* Solid text colors only — no gradient clipping, no transparency */
+  .text-gradient { color: oklch(0.18 0 0); background: none; -webkit-background-clip: initial; background-clip: initial; }
+  .text-electric { color: var(--hue-red); background: none; -webkit-background-clip: initial; background-clip: initial; }
+  .text-aurora   { color: var(--hue-green); background: none; -webkit-background-clip: initial; background-clip: initial; }
+  .text-sunset   { color: var(--hue-red); background: none; -webkit-background-clip: initial; background-clip: initial; }
 
   .ambient-warm::before, .ambient-electric::before {
     content: ""; position: absolute; inset: -1px;
