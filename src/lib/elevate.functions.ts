@@ -11,6 +11,35 @@ export const listCatalog = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const suggestTrack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ answer: z.string().min(3).max(800) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("AI is not configured");
+    const { data: catalog } = await context.supabase
+      .from("tracks_catalog").select("slug,name,category,short_description").order("sort_order");
+    const list = (catalog ?? []).map(t => `${t.slug} :: ${t.name} (${t.category}) — ${t.short_description}`).join("\n");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: `You are a wise, warm life coach. The user just answered: "What is the one thing that, if you changed it, would change everything?". Pick the SINGLE most fitting track for them from this catalog. Respond with strict JSON: {"slug": string, "reason": string (1-2 warm sentences referencing what they said), "identity": string (5-9 words: "You are becoming someone who...")}. Catalog:\n${list}` },
+          { role: "user", content: data.answer },
+        ],
+      }),
+    });
+    if (!res.ok) throw new Error(`AI ${res.status}`);
+    const json = await res.json();
+    const txt: string = json.choices?.[0]?.message?.content ?? "{}";
+    let parsed: any; try { parsed = JSON.parse(txt); } catch { parsed = JSON.parse(txt.replace(/^```json\s*|```$/g,"")); }
+    const match = (catalog ?? []).find(t => t.slug === parsed.slug) ?? catalog?.[0];
+    return { track: match, reason: parsed.reason ?? "", identity: parsed.identity ?? "" };
+  });
+
 export const listUserTracks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
