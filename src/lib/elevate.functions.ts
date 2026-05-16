@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { withArchetype, archetypeForSlug } from "@/lib/coach-archetypes";
 
 export const listCatalog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -54,9 +55,18 @@ export const listUserTracks = createServerFn({ method: "GET" })
 
 export const activateTracks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ trackIds: z.array(z.string().uuid()).min(1).max(50) }).parse(d))
+  .inputValidator((d) => z.object({
+    trackIds: z.array(z.string().uuid()).min(1).max(50),
+    contract: z.object({
+      answer: z.string().max(800).optional(),
+      identity: z.string().max(200).optional(),
+      commitment: z.string().max(400).optional(),
+      signed_at: z.string().optional(),
+    }).optional(),
+  }).parse(d))
   .handler(async ({ data, context }) => {
-    const rows = data.trackIds.map((track_id) => ({ user_id: context.userId, track_id }));
+    const intake = data.contract ? { contract: { ...data.contract, signed_at: data.contract.signed_at ?? new Date().toISOString() } } : undefined;
+    const rows = data.trackIds.map((track_id) => ({ user_id: context.userId, track_id, ...(intake ? { intake } : {}) }));
     const { error } = await context.supabase.from("user_tracks").upsert(rows, { onConflict: "user_id,track_id", ignoreDuplicates: true });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -163,7 +173,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     });
 
     const messages = [
-      { role: "system", content: ut.track.ai_system_prompt + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.` },
+      { role: "system", content: withArchetype(ut.track.slug, ut.track.ai_system_prompt) + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.${(() => { const c: any = (ut.intake as any)?.contract; return c?.answer ? `\n\nThe user's transformation contract said: "${c.answer}". Identity: "${c.identity ?? ""}". Reference it gently when meaningful.` : ""; })()}` },
       ...(history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
       { role: "user", content: data.content },
     ];
@@ -308,7 +318,7 @@ export const startJourney = createServerFn({ method: "POST" })
     if (existingJ) return { journeyId: existingJ.id, userTrackId: userTrack.id };
 
     const { data: cat } = await context.supabase
-      .from("tracks_catalog").select("name,ai_system_prompt").eq("id", data.trackId).single();
+      .from("tracks_catalog").select("slug,name,ai_system_prompt").eq("id", data.trackId).single();
     if (!cat) throw new Error("Track not found");
 
     const { data: jr, error: jErr } = await context.supabase.from("journeys").insert({
@@ -323,7 +333,7 @@ export const startJourney = createServerFn({ method: "POST" })
 
     const to = Math.min(CHUNK_SIZE, data.totalDays);
     const days = await generateDaysChunk({
-      key, trackName: cat.name, trackPrompt: cat.ai_system_prompt,
+      key, trackName: cat.name, trackPrompt: withArchetype(cat.slug, cat.ai_system_prompt),
       totalDays: data.totalDays, startingPoint: data.startingPoint,
       motivation: data.motivation, obstacle: data.obstacle, fromDay: 1, toDay: to,
     });
@@ -351,14 +361,14 @@ export const ensureDaysGenerated = createServerFn({ method: "POST" })
     if (!jr) throw new Error("Journey not found");
     if (jr.generated_through >= data.throughDay || jr.generated_through >= jr.total_days) return { ok: true };
 
-    const { data: ut } = await context.supabase.from("user_tracks").select("track:tracks_catalog(name,ai_system_prompt)").eq("id", jr.user_track_id).single();
+    const { data: ut } = await context.supabase.from("user_tracks").select("track:tracks_catalog(slug,name,ai_system_prompt)").eq("id", jr.user_track_id).single();
     const cat: any = ut?.track;
     if (!cat) throw new Error("Track missing");
 
     const from = jr.generated_through + 1;
     const to = Math.min(jr.total_days, Math.max(data.throughDay, from + CHUNK_SIZE - 1));
     const days = await generateDaysChunk({
-      key, trackName: cat.name, trackPrompt: cat.ai_system_prompt,
+      key, trackName: cat.name, trackPrompt: withArchetype(cat.slug, cat.ai_system_prompt),
       totalDays: jr.total_days, startingPoint: jr.starting_point,
       motivation: jr.motivation, obstacle: jr.obstacle, fromDay: from, toDay: to,
     });
