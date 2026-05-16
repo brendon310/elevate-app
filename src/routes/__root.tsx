@@ -47,7 +47,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Sora:wght@200..800&display=swap" },
+      { rel: "preconnect", href: "https://api.fontshare.com" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" },
+      { rel: "stylesheet", href: "https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -70,6 +72,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <div className="mesh-bg" aria-hidden />
         <div className="grain-overlay" aria-hidden />
         <Outlet />
         <Toaster theme="dark" position="top-center" />

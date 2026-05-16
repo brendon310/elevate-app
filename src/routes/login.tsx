@@ -49,17 +49,17 @@ function LoginPage() {
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10
-        bg-[radial-gradient(60%_60%_at_50%_20%,oklch(0.45_0.18_40_/_0.4),transparent_70%)]" />
+        bg-[radial-gradient(60%_60%_at_50%_20%,oklch(0.62_0.215_275_/_0.45),transparent_70%),radial-gradient(45%_55%_at_80%_80%,oklch(0.70_0.215_340_/_0.30),transparent_70%)]" />
       <div className="w-full max-w-sm">
         <Link to="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <div className="h-9 w-9 rounded-full grad-warm flex items-center justify-center shadow-[var(--shadow-glow)]">
-            <span className="font-display italic text-background text-lg leading-none">e</span>
+          <div className="h-9 w-9 rounded-2xl grad-electric flex items-center justify-center shadow-[var(--shadow-violet)]">
+            <span className="font-display text-white text-lg leading-none font-bold">e</span>
           </div>
-          <span className="font-display tracking-tight">Elevate</span>
+          <span className="font-display tracking-tight font-semibold">Elevate</span>
         </Link>
 
-        <div className="warm-card rounded-[1.75rem] p-7">
-          <h1 className="font-display text-3xl leading-tight">{mode === "signin" ? "Welcome back." : <>Begin <span className="italic">again</span>.</>}</h1>
+        <div className="depth-card rounded-[1.75rem] p-7">
+          <h1 className="font-display text-3xl leading-tight tracking-tight">{mode === "signin" ? "Welcome back." : <>Begin <span className="text-electric">again</span>.</>}</h1>
           <p className="text-sm text-muted-foreground mt-2">{mode === "signin" ? "Pick up where you left off." : "One question stands between you and day one."}</p>
 
           <button onClick={google} disabled={busy} className="mt-6 w-full rounded-xl border border-border bg-card/60 hover:bg-accent transition px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
@@ -77,7 +77,7 @@ function LoginPage() {
               className="w-full rounded-xl bg-input border border-border px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring transition" />
             <input type="password" required minLength={6} value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Password"
               className="w-full rounded-xl bg-input border border-border px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring transition" />
-            <button type="submit" disabled={busy} className="w-full rounded-xl grad-warm text-background px-4 py-3 text-sm font-medium shadow-[var(--shadow-glow)] disabled:opacity-50 transition">
+            <button type="submit" disabled={busy} className="btn-chunk w-full rounded-xl grad-electric text-white px-4 py-3.5 text-sm font-bold shadow-[var(--shadow-violet)] disabled:opacity-50">
               {busy ? "..." : mode === "signin" ? "Sign in" : "Create account"}
             </button>
           </form>

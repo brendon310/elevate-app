@@ -9,7 +9,7 @@ import {
   getJourney, startJourney, completeJourneyDay, ensureDaysGenerated,
   getReEntryMessage, getMilestoneMessage, sendCoachMessage, getTrackDetail,
 } from "@/lib/elevate.functions";
-import { CATEGORY_CLASS } from "@/lib/categories";
+import { CATEGORY_CLASS, trackHueGradient, trackHueVar } from "@/lib/categories";
 
 export const Route = createFileRoute("/_authenticated/track/$slug")({ component: TrackDetail });
 
@@ -216,33 +216,40 @@ function JourneyView({ slug, data }: any) {
       <Link to="/app" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="h-4 w-4"/> Back</Link>
 
       <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-        className="warm-card rounded-[2rem] p-8 relative overflow-hidden ambient-warm">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-primary">{catalog.category}</p>
-        <h1 className="font-display text-4xl md:text-5xl tracking-tight mt-2 font-light">{catalog.name}</h1>
-        {hasIdentity && (
-          <p className="mt-3 font-display italic text-base text-foreground/80">
-            You are someone who {identityVerb}s.
-          </p>
-        )}
-        <div className="mt-6 flex flex-wrap items-end gap-6">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Streak</p>
-            <div className="flex items-baseline gap-1.5 mt-1">
-              <Flame className="h-5 w-5 text-primary self-center"/>
-              <span className="font-display italic text-4xl text-gradient leading-none">{userTrack.current_streak}</span>
-              <span className="text-xs text-muted-foreground">days</span>
+        className="rounded-[2rem] p-8 relative overflow-hidden depth-card"
+        style={{ background: trackHueGradient(slug), boxShadow: `0 30px 70px -20px color-mix(in oklab, var(${trackHueVar(slug)}) 55%, transparent)` }}>
+        <div aria-hidden className="absolute -right-20 -top-20 h-72 w-72 rounded-full opacity-50 blur-3xl"
+          style={{ background: `radial-gradient(circle, oklch(1 0 0 / 0.4), transparent 60%)` }}/>
+        <div aria-hidden className="absolute -left-10 -bottom-20 h-60 w-60 rounded-full opacity-35 blur-3xl"
+          style={{ background: `radial-gradient(circle, oklch(0 0 0 / 0.6), transparent 65%)` }}/>
+
+        <div className="relative">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-white/85 font-mono">{catalog.category}</p>
+          <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] mt-2 text-white">{catalog.name}</h1>
+          {hasIdentity && (
+            <p className="mt-3 text-sm text-white/85">You are someone who <span className="font-semibold">{identityVerb}s</span>.</p>
+          )}
+
+          {/* Massive day counter */}
+          <div className="mt-8 flex items-end gap-5">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-white/70 font-mono">Day</p>
+              <p className="font-display text-[7rem] leading-[0.8] tracking-[-0.06em] text-white num">{currentDayNumber}</p>
+              <p className="text-xs text-white/70 font-mono num mt-1">of {journey.total_days}</p>
             </div>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Day</p>
-            <p className="font-display italic text-3xl mt-1 leading-none">{currentDayNumber}<span className="text-muted-foreground text-base"> / {journey.total_days}</span></p>
-          </div>
-          <div className="flex-1 min-w-[160px]">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{progress}% complete</p>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-accent/60 overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                transition={{ type: "spring", stiffness: 70, damping: 18 }}
-                className="h-full grad-warm" />
+            <div className="flex-1 pb-2">
+              <div className="flex items-baseline gap-2 mb-2">
+                <Flame className="h-5 w-5 flame text-[color:var(--highlight)]"/>
+                <span className="font-display text-3xl num text-white leading-none">{userTrack.current_streak}</span>
+                <span className="text-xs text-white/70 uppercase tracking-widest">streak</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-black/30 overflow-hidden">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                  transition={{ type: "spring", stiffness: 60, damping: 18 }}
+                  className="h-full rounded-full bg-white"
+                  style={{ boxShadow: "0 0 12px oklch(1 0 0 / 0.6)" }}/>
+              </div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-white/70 font-mono mt-1.5 num">{progress}% complete</p>
             </div>
           </div>
         </div>
@@ -262,24 +269,15 @@ function JourneyView({ slug, data }: any) {
 
       {today && (
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-          className="mt-6 warm-card rounded-[2rem] p-8 relative overflow-hidden">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Today · Day {today.day_number}</p>
-          <h2 className="font-display text-3xl mt-2 leading-tight">{today.title}</h2>
+          className="mt-6 depth-card rounded-[2rem] p-8 relative overflow-hidden">
+          <p className="text-[10px] uppercase tracking-[0.3em] font-mono" style={{ color: `var(${trackHueVar(slug)})` }}>Mission · Day {today.day_number}</p>
+          <h2 className="font-display text-3xl mt-2 leading-tight tracking-tight">{today.title}</h2>
           <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{today.description}</p>
 
           <div className="mt-5 grid gap-3">
-            <div className="rounded-2xl bg-accent/50 p-4">
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Today's task</p>
-              <p className="text-sm">{today.task}</p>
-            </div>
-            <div className="rounded-2xl bg-accent/50 p-4">
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Reflection</p>
-              <p className="text-sm">{today.reflection}</p>
-            </div>
-            <div className="rounded-2xl bg-accent/50 p-4">
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Science</p>
-              <p className="text-sm">{today.science}</p>
-            </div>
+            <DayPanel label="Today's task" hue="--hue-violet">{today.task}</DayPanel>
+            <DayPanel label="Reflection" hue="--hue-pink">{today.reflection}</DayPanel>
+            <DayPanel label="Science" hue="--hue-mint">{today.science}</DayPanel>
           </div>
 
           {!today.completed_at ? (
@@ -288,12 +286,15 @@ function JourneyView({ slug, data }: any) {
                 placeholder={today.checkin_prompt}
                 className="w-full rounded-2xl bg-input border border-border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition" />
               <button onClick={()=>complete.mutate(today.id)} disabled={complete.isPending}
-                className={`mt-4 rounded-full grad-warm text-background px-6 py-3 text-sm font-medium shadow-[var(--shadow-glow)] disabled:opacity-50 inline-flex items-center gap-2 ${complete.isPending ? "breathe" : ""}`}>
+                className={`btn-chunk mt-4 rounded-full text-white px-7 py-3.5 text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2 ${complete.isPending ? "breathe" : ""}`}
+                style={{ background: trackHueGradient(slug), boxShadow: `0 16px 36px -10px color-mix(in oklab, var(${trackHueVar(slug)}) 65%, transparent)` }}>
                 <Check className="h-4 w-4"/> {complete.isPending ? "Listening…" : `Complete day ${today.day_number}`}
               </button>
             </div>
           ) : (
-            <div className="mt-5 text-sm text-primary inline-flex items-center gap-2 font-display italic"><Check className="h-4 w-4"/> Completed</div>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--tertiary)]/15 px-4 py-2 text-sm font-semibold text-[color:var(--tertiary)]">
+              <Check className="h-4 w-4"/> Day complete
+            </div>
           )}
         </motion.section>
       )}
@@ -331,24 +332,37 @@ function JourneyView({ slug, data }: any) {
       </section>
 
       {/* AI coach chat */}
-      <section className="mt-6 glass rounded-2xl p-5 flex flex-col h-[500px]">
-        <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">AI Coach</h2>
+      <section className="mt-6 depth-card rounded-3xl p-5 flex flex-col h-[500px]">
+        <h2 className="text-[11px] uppercase tracking-[0.3em] font-mono mb-3" style={{ color: `var(${trackHueVar(slug)})` }}>AI Coach</h2>
         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
           {(chat?.messages ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">Your coach knows your journey, your motivation, and your obstacle. Ask anything.</p>
           )}
           {(chat?.messages ?? []).map((m: any) => (
-            <div key={m.id} className={m.role === "user" ? "flex justify-end" : ""}>
-              <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${m.role==="user"?"bg-primary text-primary-foreground":"bg-accent text-foreground"}`}>{m.content}</div>
+            <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+              {m.role === "user" ? (
+                <div className="max-w-[82%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm whitespace-pre-wrap text-white" style={{ background: "var(--grad-electric)" }}>{m.content}</div>
+              ) : (
+                <div className="ai-border max-w-[82%]">
+                  <div className="rounded-[1.2rem] px-4 py-2.5 text-sm whitespace-pre-wrap bg-card text-foreground">{m.content}</div>
+                </div>
+              )}
             </div>
           ))}
-          {sendMsg.isPending && <div className="text-xs text-muted-foreground animate-pulse">Coach is thinking…</div>}
+          {sendMsg.isPending && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-[color:var(--primary)] pulse-dot"/>
+              <span>Coach is thinking…</span>
+            </div>
+          )}
           <div ref={endRef}/>
         </div>
         <form onSubmit={(e)=>{e.preventDefault(); if(input.trim()) sendMsg.mutate(input.trim());}} className="mt-3 flex gap-2">
           <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Message your coach…"
             className="flex-1 rounded-full bg-input border border-border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
-          <button type="submit" disabled={!input.trim() || sendMsg.isPending} className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50">
+          <button type="submit" disabled={!input.trim() || sendMsg.isPending}
+            className="btn-chunk h-10 w-10 rounded-full text-white flex items-center justify-center disabled:opacity-50"
+            style={{ background: "var(--grad-electric)", boxShadow: "var(--shadow-violet)" }}>
             <Send className="h-4 w-4"/>
           </button>
         </form>
@@ -381,33 +395,58 @@ function JourneyView({ slug, data }: any) {
       {/* Milestone modal */}
       {milestone && (
         <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass rounded-3xl w-full max-w-md p-8 text-center relative overflow-hidden">
-            <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-primary opacity-20 blur-3xl"/>
+          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 18 }}
+            className="depth-card rounded-[2rem] w-full max-w-md p-8 text-center relative overflow-hidden">
+            <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full opacity-50 blur-3xl" style={{ background: "var(--grad-electric)" }}/>
+            <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full opacity-40 blur-3xl" style={{ background: "var(--grad-sunset)" }}/>
+            {/* particle burst */}
+            {Array.from({ length: 20 }).map((_, i) => {
+              const angle = (i / 20) * Math.PI * 2;
+              return (
+                <motion.span key={i}
+                  initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                  animate={{ x: Math.cos(angle)*180, y: Math.sin(angle)*180, opacity: 0, scale: 0.4 }}
+                  transition={{ duration: 1.2, delay: 0.1, ease: [0.2,0.9,0.2,1] }}
+                  className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full"
+                  style={{ background: i % 3 === 0 ? "var(--highlight)" : i % 3 === 1 ? "var(--secondary)" : "var(--tertiary)" }}/>
+              );
+            })}
             <div className="relative">
-              <div className="mx-auto h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center">
-                <Trophy className="h-10 w-10 text-primary"/>
+              <div className="mx-auto h-24 w-24 rounded-full flex items-center justify-center" style={{ background: "var(--grad-sunset)", boxShadow: "var(--shadow-yellow)" }}>
+                <Trophy className="h-12 w-12 text-white"/>
               </div>
-              <p className="text-xs uppercase tracking-widest text-primary mt-4">Milestone unlocked</p>
-              <h2 className="text-3xl font-bold mt-1">Day {milestone.day}</h2>
+              <p className="text-[11px] uppercase tracking-[0.3em] font-mono text-[color:var(--highlight)] mt-5">Milestone unlocked</p>
+              <h2 className="font-display text-5xl tracking-[-0.04em] mt-1 text-sunset num">Day {milestone.day}</h2>
               <p className="text-sm mt-4 whitespace-pre-wrap">{milestone.message}</p>
               {milestone.science && (
-                <div className="mt-5 rounded-xl bg-accent/50 p-3 text-left">
-                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">What's happening</p>
+                <div className="mt-5 rounded-2xl bg-accent/40 p-3 text-left">
+                  <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono mb-1">What's happening</p>
                   <p className="text-sm">{milestone.science}</p>
                 </div>
               )}
               <div className="mt-6 flex gap-2">
-                <button onClick={()=>setMilestone(null)} className="flex-1 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold">Continue</button>
+                <button onClick={()=>setMilestone(null)} className="btn-chunk flex-1 rounded-full text-white px-5 py-3 text-sm font-bold" style={{ background: "var(--grad-electric)", boxShadow: "var(--shadow-violet)" }}>Continue</button>
                 <button onClick={()=>{
                   const text = `Day ${milestone.day} on ${catalog.name} — ${milestone.message}`;
                   if (navigator.share) navigator.share({ text }).catch(()=>{});
                   else { navigator.clipboard.writeText(text); toast.success("Copied"); }
-                }} className="flex-1 rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:bg-accent">Share</button>
+                }} className="btn-chunk flex-1 rounded-full border border-border px-5 py-3 text-sm font-bold hover:bg-accent">Share</button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+    </div>
+  );
+}
+
+function DayPanel({ label, hue, children }: { label: string; hue: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl p-4 relative overflow-hidden border border-white/5 bg-card/40">
+      <div aria-hidden className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: `var(${hue})`, boxShadow: `0 0 12px var(${hue})` }}/>
+      <p className="text-[10px] uppercase tracking-[0.3em] font-mono mb-1.5" style={{ color: `var(${hue})` }}>{label}</p>
+      <p className="text-sm leading-relaxed text-foreground/90">{children}</p>
     </div>
   );
 }
