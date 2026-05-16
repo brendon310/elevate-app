@@ -45,47 +45,47 @@
 :root {
   --radius: 1.5rem;
 
-  /* Bold Monochrome Energy — black, white, gray + red / green / yellow accents */
-  --background: oklch(0.05 0 0);                /* #0A0A0A */
-  --foreground: oklch(1 0 0);                   /* #FFFFFF */
-  --card: oklch(0.16 0 0);                      /* #1E1E1E card surface */
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.16 0 0);
-  --popover-foreground: oklch(1 0 0);
-  --surface: oklch(0.11 0 0);                   /* #141414 surface */
+  /* Daylight Monochrome Energy — light gray base, white cards, black accents */
+  --background: oklch(0.965 0 0);               /* #F5F5F5 */
+  --foreground: oklch(0.18 0 0);                /* #1A1A1A */
+  --card: oklch(1 0 0);                         /* #FFFFFF */
+  --card-foreground: oklch(0.18 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0 0);
+  --surface: oklch(1 0 0);
 
-  /* Primary = off-white #F5F5F5 */
-  --primary: oklch(0.965 0 0);
-  --primary-foreground: oklch(0.05 0 0);
+  /* Primary = bold black #1A1A1A — CTAs hit hard against light bg */
+  --primary: oklch(0.18 0 0);
+  --primary-foreground: oklch(1 0 0);
   /* Secondary = pure red #FF3B3B */
   --secondary: oklch(0.645 0.245 25);
   --secondary-foreground: oklch(1 0 0);
-  /* Tertiary = electric green #00E676 */
-  --tertiary: oklch(0.815 0.245 145);
-  --tertiary-foreground: oklch(0.05 0 0);
+  /* Tertiary = vivid green #00C853 */
+  --tertiary: oklch(0.745 0.235 145);
+  --tertiary-foreground: oklch(1 0 0);
   /* Highlight = yellow #FFD000 */
   --highlight: oklch(0.875 0.185 95);
-  --highlight-foreground: oklch(0.05 0 0);
+  --highlight-foreground: oklch(0.18 0 0);
 
-  --muted: oklch(0.18 0 0);
+  --muted: oklch(0.93 0 0);                     /* light gray surface */
   --muted-foreground: oklch(0.60 0 0);          /* #888888 */
-  --accent: oklch(0.22 0 0);
-  --accent-foreground: oklch(1 0 0);
+  --accent: oklch(0.93 0 0);
+  --accent-foreground: oklch(0.18 0 0);
 
   --destructive: oklch(0.645 0.245 25);
   --destructive-foreground: oklch(1 0 0);
 
-  --success: oklch(0.815 0.245 145);
+  --success: oklch(0.745 0.235 145);
 
-  --border: oklch(0.22 0 0);                    /* #2A2A2A */
-  --input: oklch(0.18 0 0);
-  --ring: oklch(0.965 0 0);
+  --border: oklch(0.89 0 0);                    /* soft gray hairline */
+  --input: oklch(0.93 0 0);
+  --ring: oklch(0.18 0 0);
 
   /* Hue tokens — monochrome with 3 sharp accents only */
   --hue-red:    oklch(0.645 0.245 25);          /* #FF3B3B */
-  --hue-green:  oklch(0.815 0.245 145);         /* #00E676 */
+  --hue-green:  oklch(0.745 0.235 145);         /* #00C853 */
   --hue-yellow: oklch(0.875 0.185 95);          /* #FFD000 */
-  --hue-white:  oklch(0.965 0 0);
+  --hue-white:  oklch(0.18 0 0);                /* black accent in light theme */
   --hue-gray:   oklch(0.55 0 0);
   /* Back-compat aliases — everything chromatic collapses to neutrals or accents */
   --hue-violet: var(--hue-white);
@@ -99,31 +99,31 @@
   --hue-magenta:var(--hue-yellow);
   --hue-teal:   var(--hue-gray);
 
-  /* Category accents — Fitness=red, Mental=green, Quit=yellow, Learning=white, Productivity=gray */
+  /* Category accents — Fitness=red, Mental=green, Quit=yellow, Learning=black, Productivity=gray */
   --fitness:      var(--hue-red);
   --mental:       var(--hue-green);
   --quit:         var(--hue-yellow);
   --learning:     var(--hue-white);
   --productivity: var(--hue-gray);
 
-  /* Category "gradients" — restrained mono surfaces with a single accent edge */
-  --grad-fitness:     linear-gradient(160deg, oklch(0.20 0 0), oklch(0.10 0 0));
-  --grad-mental:      linear-gradient(160deg, oklch(0.20 0 0), oklch(0.10 0 0));
-  --grad-quit:        linear-gradient(160deg, oklch(0.20 0 0), oklch(0.10 0 0));
-  --grad-learning:    linear-gradient(160deg, oklch(0.22 0 0), oklch(0.12 0 0));
-  --grad-productivity:linear-gradient(160deg, oklch(0.18 0 0), oklch(0.10 0 0));
-  --grad-electric:    linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
-  --grad-sunset:      linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
-  --grad-aurora:      linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
+  /* Category "surfaces" — bold black/charcoal blocks reserved for hero / milestone moments */
+  --grad-fitness:     linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
+  --grad-mental:      linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
+  --grad-quit:        linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
+  --grad-learning:    linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
+  --grad-productivity:linear-gradient(160deg, oklch(0.22 0 0), oklch(0.08 0 0));
+  --grad-electric:    linear-gradient(160deg, oklch(0.18 0 0), oklch(0 0 0));
+  --grad-sunset:      linear-gradient(160deg, oklch(0.22 0 0), oklch(0.06 0 0));
+  --grad-aurora:      linear-gradient(160deg, oklch(0.22 0 0), oklch(0.06 0 0));
   --grad-warm:        var(--grad-electric);
 
-  /* Shadows — pure black depth, never tinted */
-  --shadow-card:   0 24px 60px -24px oklch(0 0 0 / 0.85), 0 2px 6px -2px oklch(0 0 0 / 0.5);
-  --shadow-glow:   0 30px 80px -20px oklch(0 0 0 / 0.9);
+  /* Shadows — soft, lifted, daylight depth (not heavy) */
+  --shadow-card:   0 12px 32px -16px oklch(0 0 0 / 0.18), 0 2px 6px -2px oklch(0 0 0 / 0.08);
+  --shadow-glow:   0 24px 60px -16px oklch(0 0 0 / 0.25);
   --shadow-red:    0 18px 40px -12px oklch(0.645 0.245 25 / 0.45), 0 4px 12px -4px oklch(0.645 0.245 25 / 0.30);
-  --shadow-green:  0 18px 40px -12px oklch(0.815 0.245 145 / 0.40), 0 4px 12px -4px oklch(0.815 0.245 145 / 0.25);
+  --shadow-green:  0 18px 40px -12px oklch(0.745 0.235 145 / 0.40), 0 4px 12px -4px oklch(0.745 0.235 145 / 0.25);
   --shadow-yellow: 0 18px 40px -12px oklch(0.875 0.185 95 / 0.40), 0 4px 12px -4px oklch(0.875 0.185 95 / 0.25);
-  --shadow-violet: var(--shadow-card);
+  --shadow-violet: 0 14px 36px -14px oklch(0.18 0 0 / 0.35), 0 3px 8px -3px oklch(0.18 0 0 / 0.18);
   --shadow-coral:  var(--shadow-red);
   --shadow-mint:   var(--shadow-green);
 
