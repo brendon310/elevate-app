@@ -10,7 +10,7 @@ import {
 } from "@/lib/elevate.functions";
 import { CATEGORY_CLASS } from "@/lib/categories";
 
-export const Route = createFileRoute("/_authenticated/track/")({ component: TrackDetail });
+export const Route = createFileRoute("/_authenticated/track/$slug")({ component: TrackDetail });
 
 const DURATIONS = [
   { v: 30, l: "30 days" }, { v: 60, l: "60 days" }, { v: 90, l: "90 days" },
