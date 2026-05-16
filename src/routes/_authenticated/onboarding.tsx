@@ -56,7 +56,7 @@ function Onboarding() {
                 autoFocus value={answer} onChange={(e)=>setAnswer(e.target.value.slice(0, 500))}
                 placeholder="Take your time. Be honest."
                 className="w-full bg-transparent border-0 border-b-2 border-border focus:border-[color:var(--primary)] outline-none
-                  text-center font-display text-2xl placeholder:text-muted-foreground/40
+                  text-center font-display text-2xl placeholder:text-muted-foreground
                   py-4 px-2 resize-none min-h-[120px] transition-colors"
               />
               <button type="submit" disabled={answer.trim().length < 3}
@@ -95,7 +95,7 @@ function Onboarding() {
             </motion.div>
             <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em]">{result.track.name}</h1>
             <p className="mt-3 text-[11px] uppercase tracking-[0.3em] font-mono text-muted-foreground">{result.track.category}</p>
-            <p className="mt-8 text-xl leading-relaxed text-foreground/90">"{result.reason}"</p>
+            <p className="mt-8 text-xl leading-relaxed text-foreground">"{result.reason}"</p>
             {result.identity && (
                 <p className="mt-6 text-sm text-electric text-yellow-400 font-semibold">{result.identity}</p>
             )}

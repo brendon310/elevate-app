@@ -21,7 +21,7 @@ function Layout() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-60 border-r border-border bg-card/40 backdrop-blur flex-col p-4">
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-60 border-r border-border bg-card  flex-col p-4">
         <Link to="/app" className="flex items-center gap-2 mb-8 px-2">
           <div className="h-8 w-8 rounded-lg grad-productivity flex items-center justify-center"><Sparkles className="h-4 w-4 text-background"/></div>
           <span className="font-semibold tracking-tight">Elevate</span>
@@ -45,7 +45,7 @@ function Layout() {
         <Outlet />
       </main>
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-border bg-card/90 backdrop-blur z-50 flex justify-around py-2">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-border bg-card  z-50 flex justify-around py-2">
         {navItems.map(({to,icon:Icon,label}) => (
           <Link key={to} to={to} className="flex flex-col items-center gap-1 px-4 py-1 text-[10px] text-muted-foreground [&.active]:text-foreground" activeProps={{className:"active"}}>
             <Icon className="h-5 w-5"/>{label}

@@ -94,7 +94,7 @@ function Landing() {
           <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Five worlds. Fifty paths.</p>
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
             {["Fitness & Body","Mental Health","Quit Bad Habits","Mind & Learning","Productivity & Life"].map((c) => (
-              <span key={c} className="rounded-full border border-[color:var(--primary)]/30 bg-card/60 px-4 py-2 text-foreground/85 font-mono uppercase tracking-widest text-[10px]">{c}</span>
+              <span key={c} className="rounded-full border border-[color:var(--primary)]/30 bg-card px-4 py-2 text-foreground font-mono uppercase tracking-widest text-[10px]">{c}</span>
             ))}
           </div>
         </section>

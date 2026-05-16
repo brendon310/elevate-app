@@ -224,32 +224,32 @@ function JourneyView({ slug, data }: any) {
           style={{ background: `radial-gradient(circle, oklch(0 0 0 / 0.6), transparent 65%)` }}/>
 
         <div className="relative">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-white/85 font-mono">{catalog.category}</p>
+          <p className="text-[11px] uppercase tracking-[0.3em] text-white font-mono">{catalog.category}</p>
           <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] mt-2 text-white">{catalog.name}</h1>
           {hasIdentity && (
-            <p className="mt-3 text-sm text-white/85">You are someone who <span className="font-semibold">{identityVerb}s</span>.</p>
+            <p className="mt-3 text-sm text-white">You are someone who <span className="font-semibold">{identityVerb}s</span>.</p>
           )}
 
           {/* Massive day counter */}
           <div className="mt-8 flex items-end gap-5">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-white/70 font-mono">Day</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-white font-mono">Day</p>
               <p className="font-display text-[7rem] leading-[0.8] tracking-[-0.06em] text-white num">{currentDayNumber}</p>
-              <p className="text-xs text-white/70 font-mono num mt-1">of {journey.total_days}</p>
+              <p className="text-xs text-white font-mono num mt-1">of {journey.total_days}</p>
             </div>
             <div className="flex-1 pb-2">
               <div className="flex items-baseline gap-2 mb-2">
                 <Flame className="h-5 w-5 flame text-[color:var(--highlight)]"/>
                 <span className="font-display text-3xl num text-white leading-none">{userTrack.current_streak}</span>
-                <span className="text-xs text-white/70 uppercase tracking-widest">streak</span>
+                <span className="text-xs text-white uppercase tracking-widest">streak</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-black/30 overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-black overflow-hidden">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
                   transition={{ type: "spring", stiffness: 60, damping: 18 }}
                   className="h-full rounded-full bg-white"
                   style={{ boxShadow: "0 0 12px oklch(1 0 0 / 0.6)" }}/>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-white/70 font-mono mt-1.5 num">{progress}% complete</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-white font-mono mt-1.5 num">{progress}% complete</p>
             </div>
           </div>
         </div>
@@ -313,7 +313,7 @@ function JourneyView({ slug, data }: any) {
               const isMilestone = MILESTONES.includes(dayNum);
               return (
                 <button key={dayNum} onClick={()=> d && setOpenDay(d)} disabled={!d}
-                  className={`relative w-full text-left rounded-xl px-3 py-2 transition flex items-center gap-3 ${isToday ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-accent/50"} ${isLocked ? "opacity-50 cursor-default" : ""}`}>
+                  className={`relative w-full text-left rounded-xl px-3 py-2 transition flex items-center gap-3 ${isToday ? "bg-primary ring-1 ring-primary/40" : "hover:bg-accent/50"} ${isLocked ? "opacity-50 cursor-default" : ""}`}>
                   <span className={`absolute -left-[18px] top-1/2 -translate-y-1/2 h-3 w-3 rounded-full ${d?.completed_at ? "bg-primary" : isToday ? "bg-primary ring-4 ring-primary/20" : "bg-border"}`}/>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ function JourneyView({ slug, data }: any) {
 
       {/* Day detail modal */}
       {openDay && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={()=>setOpenDay(null)}>
+        <div className="fixed inset-0 z-50 bg-background  flex items-end sm:items-center justify-center p-4" onClick={()=>setOpenDay(null)}>
           <div className="glass rounded-3xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -385,7 +385,7 @@ function JourneyView({ slug, data }: any) {
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Reflection</p><p className="text-sm">{openDay.reflection}</p></div>
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Science</p><p className="text-sm">{openDay.science}</p></div>
               {openDay.user_note && (
-                <div className="rounded-xl bg-primary/10 p-3"><p className="text-[11px] uppercase tracking-widest text-primary mb-1">Your note</p><p className="text-sm whitespace-pre-wrap">{openDay.user_note}</p></div>
+                <div className="rounded-xl bg-primary p-3"><p className="text-[11px] uppercase tracking-widest text-primary mb-1">Your note</p><p className="text-sm whitespace-pre-wrap">{openDay.user_note}</p></div>
               )}
             </div>
           </div>
@@ -394,7 +394,7 @@ function JourneyView({ slug, data }: any) {
 
       {/* Milestone modal */}
       {milestone && (
-        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-background  flex items-center justify-center p-4">
           <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 18 }}
             className="depth-card rounded-[2rem] w-full max-w-md p-8 text-center relative overflow-hidden">
@@ -443,10 +443,10 @@ function JourneyView({ slug, data }: any) {
 
 function DayPanel({ label, hue, children }: { label: string; hue: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl p-4 relative overflow-hidden border border-white/5 bg-card/40">
+    <div className="rounded-2xl p-4 relative overflow-hidden border border-white/5 bg-card">
       <div aria-hidden className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: `var(${hue})`, boxShadow: `0 0 12px var(${hue})` }}/>
       <p className="text-[10px] uppercase tracking-[0.3em] font-mono mb-1.5" style={{ color: `var(${hue})` }}>{label}</p>
-      <p className="text-sm leading-relaxed text-foreground/90">{children}</p>
+      <p className="text-sm leading-relaxed text-foreground">{children}</p>
     </div>
   );
 }

@@ -30,7 +30,7 @@ function TracksPage() {
     <div className="max-w-5xl mx-auto px-5 py-8 pb-24">
       <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono">Library</p>
       <h1 className="mt-2 font-display text-4xl tracking-tight">Fifty <span className="text-electric text-yellow-400">specialists</span>.</h1>
-      <p className="mt-2 text-foreground/70">Pick the one that calls you today.</p>
+      <p className="mt-2 text-foreground">Pick the one that calls you today.</p>
 
       <div className="mt-10 space-y-10">
         {Object.entries(grouped).map(([cat, tracks]: any) => (
