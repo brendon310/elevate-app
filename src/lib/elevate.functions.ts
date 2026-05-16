@@ -318,7 +318,7 @@ export const startJourney = createServerFn({ method: "POST" })
     if (existingJ) return { journeyId: existingJ.id, userTrackId: userTrack.id };
 
     const { data: cat } = await context.supabase
-      .from("tracks_catalog").select("name,ai_system_prompt").eq("id", data.trackId).single();
+      .from("tracks_catalog").select("slug,name,ai_system_prompt").eq("id", data.trackId).single();
     if (!cat) throw new Error("Track not found");
 
     const { data: jr, error: jErr } = await context.supabase.from("journeys").insert({
@@ -333,7 +333,7 @@ export const startJourney = createServerFn({ method: "POST" })
 
     const to = Math.min(CHUNK_SIZE, data.totalDays);
     const days = await generateDaysChunk({
-      key, trackName: cat.name, trackPrompt: cat.ai_system_prompt,
+      key, trackName: cat.name, trackPrompt: withArchetype(cat.slug, cat.ai_system_prompt),
       totalDays: data.totalDays, startingPoint: data.startingPoint,
       motivation: data.motivation, obstacle: data.obstacle, fromDay: 1, toDay: to,
     });
@@ -361,14 +361,14 @@ export const ensureDaysGenerated = createServerFn({ method: "POST" })
     if (!jr) throw new Error("Journey not found");
     if (jr.generated_through >= data.throughDay || jr.generated_through >= jr.total_days) return { ok: true };
 
-    const { data: ut } = await context.supabase.from("user_tracks").select("track:tracks_catalog(name,ai_system_prompt)").eq("id", jr.user_track_id).single();
+    const { data: ut } = await context.supabase.from("user_tracks").select("track:tracks_catalog(slug,name,ai_system_prompt)").eq("id", jr.user_track_id).single();
     const cat: any = ut?.track;
     if (!cat) throw new Error("Track missing");
 
     const from = jr.generated_through + 1;
     const to = Math.min(jr.total_days, Math.max(data.throughDay, from + CHUNK_SIZE - 1));
     const days = await generateDaysChunk({
-      key, trackName: cat.name, trackPrompt: cat.ai_system_prompt,
+      key, trackName: cat.name, trackPrompt: withArchetype(cat.slug, cat.ai_system_prompt),
       totalDays: jr.total_days, startingPoint: jr.starting_point,
       motivation: jr.motivation, obstacle: jr.obstacle, fromDay: from, toDay: to,
     });
