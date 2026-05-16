@@ -193,3 +193,248 @@ export const generateWeeklyInsight = createServerFn({ method: "POST" })
     );
     return { content, weekStart };
   });
+
+// ============================================================
+// JOURNEY SYSTEM
+// ============================================================
+
+const CHUNK_SIZE = 10;
+const MILESTONES = [1, 3, 7, 14, 21, 30, 60, 90, 180, 365];
+
+async function aiJSON(key: string, system: string, user: string): Promise<any> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!res.ok) throw new Error(`AI ${res.status}: ${(await res.text()).slice(0,200)}`);
+  const json = await res.json();
+  const txt: string = json.choices?.[0]?.message?.content ?? "{}";
+  try { return JSON.parse(txt); } catch { return JSON.parse(txt.replace(/^```json\s*|```$/g, "")); }
+}
+
+async function generateDaysChunk(opts: {
+  key: string;
+  trackName: string;
+  trackPrompt: string;
+  totalDays: number;
+  startingPoint: string;
+  motivation: string;
+  obstacle: string;
+  fromDay: number;
+  toDay: number;
+}) {
+  const system = `${opts.trackPrompt}
+
+You are designing a science-backed, day-by-day transformation journey for the track "${opts.trackName}".
+Total journey length: ${opts.totalDays} days. User starting point: ${opts.startingPoint}.
+User motivation: "${opts.motivation || "n/a"}". Biggest obstacle: "${opts.obstacle || "n/a"}".
+
+Output STRICT JSON: { "days": [ { "day_number": int, "title": str, "description": str (2-3 sentences, psychological + practical), "task": str (one concrete actionable task), "reflection": str (one journaling question), "science": str (one relevant scientific or psychological insight, 1-2 sentences), "checkin_prompt": str (one specific AI check-in question about that day) } ] }
+
+Rules:
+- Generate exactly days ${opts.fromDay} through ${opts.toDay} inclusive.
+- Increase complexity and depth as day_number rises.
+- Reference the user's obstacle when relevant.
+- Tone: warm, expert, never preachy. No emojis.`;
+  const out = await aiJSON(opts.key, system, `Generate days ${opts.fromDay}-${opts.toDay} as JSON.`);
+  const days: any[] = Array.isArray(out?.days) ? out.days : [];
+  return days.filter(d => d && typeof d.day_number === "number" && d.day_number >= opts.fromDay && d.day_number <= opts.toDay);
+}
+
+export const startJourney = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    trackId: z.string().uuid(),
+    totalDays: z.number().int().min(7).max(365),
+    startingPoint: z.enum(["beginner","been_trying","relapsed","intermediate","advanced"]),
+    motivation: z.string().max(400).default(""),
+    obstacle: z.string().max(400).default(""),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("AI is not configured");
+
+    // Ensure user_track
+    const { data: existingUT } = await context.supabase
+      .from("user_tracks").select("*").eq("user_id", context.userId).eq("track_id", data.trackId).maybeSingle();
+    let userTrack = existingUT;
+    if (!userTrack) {
+      const { data: ins, error } = await context.supabase.from("user_tracks")
+        .insert({ user_id: context.userId, track_id: data.trackId }).select("*").single();
+      if (error) throw new Error(error.message);
+      userTrack = ins;
+    }
+
+    // If journey exists, return it
+    const { data: existingJ } = await context.supabase.from("journeys")
+      .select("*").eq("user_track_id", userTrack.id).maybeSingle();
+    if (existingJ) return { journeyId: existingJ.id, userTrackId: userTrack.id };
+
+    const { data: cat } = await context.supabase
+      .from("tracks_catalog").select("name,ai_system_prompt").eq("id", data.trackId).single();
+    if (!cat) throw new Error("Track not found");
+
+    const { data: jr, error: jErr } = await context.supabase.from("journeys").insert({
+      user_id: context.userId,
+      user_track_id: userTrack.id,
+      total_days: data.totalDays,
+      starting_point: data.startingPoint,
+      motivation: data.motivation,
+      obstacle: data.obstacle,
+    }).select("*").single();
+    if (jErr) throw new Error(jErr.message);
+
+    const to = Math.min(CHUNK_SIZE, data.totalDays);
+    const days = await generateDaysChunk({
+      key, trackName: cat.name, trackPrompt: cat.ai_system_prompt,
+      totalDays: data.totalDays, startingPoint: data.startingPoint,
+      motivation: data.motivation, obstacle: data.obstacle, fromDay: 1, toDay: to,
+    });
+    if (days.length) {
+      await context.supabase.from("journey_days").insert(days.map(d => ({
+        journey_id: jr.id, user_id: context.userId,
+        day_number: d.day_number, title: String(d.title), description: String(d.description),
+        task: String(d.task), reflection: String(d.reflection), science: String(d.science),
+        checkin_prompt: String(d.checkin_prompt),
+      })));
+      await context.supabase.from("journeys")
+        .update({ generated_through: Math.max(...days.map(d => d.day_number)) })
+        .eq("id", jr.id);
+    }
+    return { journeyId: jr.id, userTrackId: userTrack.id };
+  });
+
+export const ensureDaysGenerated = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ journeyId: z.string().uuid(), throughDay: z.number().int().min(1).max(365) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("AI is not configured");
+    const { data: jr } = await context.supabase.from("journeys").select("*").eq("id", data.journeyId).eq("user_id", context.userId).single();
+    if (!jr) throw new Error("Journey not found");
+    if (jr.generated_through >= data.throughDay || jr.generated_through >= jr.total_days) return { ok: true };
+
+    const { data: ut } = await context.supabase.from("user_tracks").select("track:tracks_catalog(name,ai_system_prompt)").eq("id", jr.user_track_id).single();
+    const cat: any = ut?.track;
+    if (!cat) throw new Error("Track missing");
+
+    const from = jr.generated_through + 1;
+    const to = Math.min(jr.total_days, Math.max(data.throughDay, from + CHUNK_SIZE - 1));
+    const days = await generateDaysChunk({
+      key, trackName: cat.name, trackPrompt: cat.ai_system_prompt,
+      totalDays: jr.total_days, startingPoint: jr.starting_point,
+      motivation: jr.motivation, obstacle: jr.obstacle, fromDay: from, toDay: to,
+    });
+    if (days.length) {
+      await context.supabase.from("journey_days").upsert(days.map(d => ({
+        journey_id: jr.id, user_id: context.userId,
+        day_number: d.day_number, title: String(d.title), description: String(d.description),
+        task: String(d.task), reflection: String(d.reflection), science: String(d.science),
+        checkin_prompt: String(d.checkin_prompt),
+      })), { onConflict: "journey_id,day_number", ignoreDuplicates: true });
+      await context.supabase.from("journeys")
+        .update({ generated_through: Math.max(jr.generated_through, ...days.map(d => d.day_number)) })
+        .eq("id", jr.id);
+    }
+    return { ok: true };
+  });
+
+export const getJourney = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ slug: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: cat } = await context.supabase.from("tracks_catalog").select("*").eq("slug", data.slug).single();
+    if (!cat) throw new Error("Track not found");
+    const { data: ut } = await context.supabase.from("user_tracks").select("*").eq("user_id", context.userId).eq("track_id", cat.id).maybeSingle();
+    if (!ut) return { catalog: cat, userTrack: null, journey: null, days: [], currentDayNumber: 1, isMilestone: null, missedDays: 0 };
+    const { data: jr } = await context.supabase.from("journeys").select("*").eq("user_track_id", ut.id).maybeSingle();
+    if (!jr) return { catalog: cat, userTrack: ut, journey: null, days: [], currentDayNumber: 1, isMilestone: null, missedDays: 0 };
+    const { data: days } = await context.supabase.from("journey_days").select("*").eq("journey_id", jr.id).order("day_number");
+    const completedCount = (days ?? []).filter(d => d.completed_at).length;
+    const currentDayNumber = Math.min(jr.total_days, completedCount + 1);
+    const isMilestone = MILESTONES.includes(completedCount) ? completedCount : null;
+    // missed days
+    let missedDays = 0;
+    if (ut.last_log_date) {
+      const days = Math.round((Date.now() - new Date(ut.last_log_date).getTime()) / 86400000);
+      missedDays = Math.max(0, days - 1);
+    }
+    return { catalog: cat, userTrack: ut, journey: jr, days: days ?? [], currentDayNumber, isMilestone, missedDays };
+  });
+
+export const completeJourneyDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ dayId: z.string().uuid(), note: z.string().max(2000).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: day } = await context.supabase.from("journey_days").select("*, journey:journeys(*)").eq("id", data.dayId).eq("user_id", context.userId).single();
+    if (!day) throw new Error("Day not found");
+    if (day.completed_at) return { ok: true, alreadyDone: true };
+    await context.supabase.from("journey_days").update({ completed_at: new Date().toISOString(), user_note: data.note ?? null }).eq("id", data.dayId);
+    // log + streak via logCheckIn logic inlined
+    const today = new Date().toISOString().slice(0, 10);
+    await context.supabase.from("track_logs").upsert({
+      user_id: context.userId, user_track_id: day.journey.user_track_id, log_date: today, completed: true, note: data.note ?? null,
+    }, { onConflict: "user_track_id,log_date" });
+    const { data: ut } = await context.supabase.from("user_tracks").select("current_streak,longest_streak,last_log_date,freezes_remaining").eq("id", day.journey.user_track_id).single();
+    if (ut) {
+      const last = ut.last_log_date ? new Date(ut.last_log_date) : null;
+      let streak = ut.current_streak ?? 0;
+      let freezes = ut.freezes_remaining ?? 0;
+      if (!last) streak = 1;
+      else {
+        const diff = Math.round((Date.now() - +last) / 86400000);
+        if (diff === 0) {/* same day */}
+        else if (diff === 1) streak += 1;
+        else if (diff === 2 && freezes > 0) { streak += 1; freezes -= 1; }
+        else streak = 1;
+      }
+      const longest = Math.max(ut.longest_streak ?? 0, streak);
+      await context.supabase.from("user_tracks").update({
+        current_streak: streak, longest_streak: longest, last_log_date: today, freezes_remaining: freezes,
+      }).eq("id", day.journey.user_track_id);
+    }
+    return { ok: true, dayNumber: day.day_number, milestoneHit: MILESTONES.includes(day.day_number) ? day.day_number : null };
+  });
+
+export const getReEntryMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ slug: z.string(), missedDays: z.number().int().min(1).max(60) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) return { message: "You missed some days. That's part of every real journey. The only failure is not coming back. Start with one small action today." };
+    const { data: cat } = await context.supabase.from("tracks_catalog").select("name,ai_system_prompt").eq("slug", data.slug).single();
+    if (!cat) throw new Error("Track not found");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: cat.ai_system_prompt + "\n\nWrite a 3-4 sentence re-entry message: no shame, normalize the gap, give one concrete tiny re-entry action specific to this track." },
+          { role: "user", content: `The user missed ${data.missedDays} day(s) on the "${cat.name}" track. Write the re-entry message.` },
+        ],
+      }),
+    });
+    const json = await res.json();
+    return { message: json.choices?.[0]?.message?.content ?? "Welcome back. One small step today." };
+  });
+
+export const getMilestoneMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ slug: z.string(), dayNumber: z.number().int().min(1).max(365) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    const { data: cat } = await context.supabase.from("tracks_catalog").select("name,ai_system_prompt").eq("slug", data.slug).single();
+    if (!cat) throw new Error("Track not found");
+    if (!key) return { message: `Day ${data.dayNumber} reached.`, science: "" };
+    const out = await aiJSON(key, cat.ai_system_prompt + "\n\nReturn strict JSON: { message: string (2-3 sentences celebrating the milestone, warm and specific), science: string (1-2 sentences of what happens in the brain/body at this point) }", `Milestone day ${data.dayNumber} on "${cat.name}".`);
+    return { message: String(out.message ?? ""), science: String(out.science ?? "") };
+  });
