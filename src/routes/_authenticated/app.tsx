@@ -88,8 +88,8 @@ function Dashboard() {
         <div className="flex gap-4 pb-2 snap-x snap-mandatory">
           {(data ?? []).map((ut: any, i: number) => {
             const seed = ut.track.slug || ut.track.name;
-            const hueVar = trackHueVar(seed);
-            const grad = trackHueGradient(seed);
+            const hueVar = trackHueVar(seed, ut.track.category);
+            const grad = trackHueGradient(seed, ut.track.category);
             const target = Math.max(1, ut.target_days ?? 30);
             const pct = Math.min(100, Math.round(((ut.current_streak ?? 0) / target) * 100));
             return (
@@ -143,12 +143,12 @@ function Dashboard() {
       <div className="space-y-2.5 mb-10">
         {(data ?? []).map((ut: any) => {
           const seed = ut.track.slug || ut.track.name;
-          const hueVar = trackHueVar(seed);
+          const hueVar = trackHueVar(seed, ut.track.category);
           return (
             <Link key={ut.id} to="/track/$slug" params={{ slug: ut.track.slug }}
               className="group flex items-center gap-4 rounded-2xl p-4 depth-card btn-chunk">
               <div className="h-12 w-12 rounded-2xl flex items-center justify-center text-white font-display text-base shrink-0"
-                style={{ background: trackHueGradient(seed), boxShadow: `0 8px 20px -6px color-mix(in oklab, var(${hueVar}) 60%, transparent)` }}>
+                style={{ background: trackHueGradient(seed, ut.track.category), boxShadow: `0 8px 20px -6px color-mix(in oklab, var(${hueVar}) 60%, transparent)` }}>
                 {ut.track.name.slice(0,2)}
               </div>
               <div className="flex-1 min-w-0">
