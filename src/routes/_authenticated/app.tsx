@@ -65,7 +65,7 @@ function Dashboard() {
           {greeting},<br/>
           <span className="text-electric text-yellow-400">friend.</span>
         </h1>
-        <p className="mt-3 text-base text-foreground/80 max-w-md leading-snug">{motivation}</p>
+        <p className="mt-3 text-base text-foreground max-w-md leading-snug">{motivation}</p>
       </motion.header>
 
       {/* Stat strip */}
@@ -108,20 +108,20 @@ function Dashboard() {
                     style={{ background: `radial-gradient(circle, oklch(1 0 0 / 0.35), transparent 70%)` }}/>
 
                   <div className="relative flex items-start justify-between">
-                    <span className="text-[10px] uppercase tracking-[0.25em] text-white/85 font-mono">{ut.track.category}</span>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-white font-mono">{ut.track.category}</span>
                     <ArcRing value={pct} hueVar="--background" size={56} />
                   </div>
 
                   <div className="relative mt-auto pt-12">
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-white/75 font-mono">Day</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-white font-mono">Day</p>
                     <p className="font-display text-[5.5rem] leading-[0.85] tracking-[-0.05em] text-white num">
                       {ut.current_streak || 0}
                     </p>
                     <h3 className="mt-3 font-display text-xl text-white leading-tight line-clamp-2">{ut.track.name}</h3>
-                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur px-2.5 py-1 text-[11px] text-white">
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black  px-2.5 py-1 text-[11px] text-white">
                       <Flame className="h-3 w-3 flame text-[color:var(--highlight)]"/>
                       <span className="font-mono num">{ut.current_streak || 0}</span>
-                      <span className="text-white/70">streak</span>
+                      <span className="text-white">streak</span>
                     </div>
                   </div>
                 </Link>
@@ -168,7 +168,7 @@ function Dashboard() {
           <span className="absolute inline-flex h-full w-full rounded-full bg-[color:var(--tertiary)] pulse-dot"/>
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[color:var(--tertiary)]"/>
         </span>
-        <p className="text-sm text-foreground/80">
+        <p className="text-sm text-foreground">
           <span className="num font-semibold text-foreground">{1200 + new Date().getHours() * 47}</span>{" "}
           people are showing up today.
         </p>

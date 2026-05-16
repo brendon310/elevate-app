@@ -62,7 +62,7 @@ function LoginPage() {
           <h1 className="font-display text-3xl leading-tight tracking-tight">{mode === "signin" ? "Welcome back." : <>Begin <span className="text-electric text-yellow-400">again</span>.</>}</h1>
           <p className="text-sm text-muted-foreground mt-2">{mode === "signin" ? "Pick up where you left off." : "One question stands between you and day one."}</p>
 
-          <button onClick={google} disabled={busy} className="mt-6 w-full rounded-xl border border-border bg-card/60 hover:bg-accent transition px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
+          <button onClick={google} disabled={busy} className="mt-6 w-full rounded-xl border border-border bg-card hover:bg-accent transition px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
             <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1H12v3.2h5.35c-.23 1.2-.95 2.2-2.03 2.88v2.4h3.28c1.92-1.77 3.03-4.38 3.03-7.48 0-.7-.07-1.4-.18-2z"/><path fill="#fff" opacity=".6" d="M12 22c2.7 0 4.97-.9 6.62-2.42l-3.28-2.4c-.9.6-2.07.97-3.34.97-2.57 0-4.75-1.73-5.53-4.07H3.13v2.55C4.77 19.78 8.13 22 12 22z"/></svg>
             Continue with Google
           </button>
