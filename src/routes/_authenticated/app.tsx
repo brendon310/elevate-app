@@ -71,7 +71,7 @@ function Dashboard() {
       {/* Stat strip */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
         className="grid grid-cols-3 gap-3 mb-8">
-        <Stat label="Active" value={String(data?.length ?? 0)} hue="text-electric" />
+        <Stat label="Active" value={String(data?.length ?? 0)} hue="text-electric text-lime-500" />
         <Stat label="Streak" value={String(totalStreak)} hue="text-sunset" icon={<Flame className="h-4 w-4 flame text-[color:var(--highlight)]"/>}/>
         <Stat label="Today" value={String((data ?? []).filter((d:any)=>d.last_check_in_date === new Date().toISOString().slice(0,10)).length)} hue="text-aurora" suffix={`/${data?.length ?? 0}`}/>
       </motion.div>
