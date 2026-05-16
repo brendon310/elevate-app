@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { withArchetype, archetypeForSlug } from "@/lib/coach-archetypes";
 
 export const listCatalog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -54,9 +55,18 @@ export const listUserTracks = createServerFn({ method: "GET" })
 
 export const activateTracks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ trackIds: z.array(z.string().uuid()).min(1).max(50) }).parse(d))
+  .inputValidator((d) => z.object({
+    trackIds: z.array(z.string().uuid()).min(1).max(50),
+    contract: z.object({
+      answer: z.string().max(800).optional(),
+      identity: z.string().max(200).optional(),
+      commitment: z.string().max(400).optional(),
+      signed_at: z.string().optional(),
+    }).optional(),
+  }).parse(d))
   .handler(async ({ data, context }) => {
-    const rows = data.trackIds.map((track_id) => ({ user_id: context.userId, track_id }));
+    const intake = data.contract ? { contract: { ...data.contract, signed_at: data.contract.signed_at ?? new Date().toISOString() } } : undefined;
+    const rows = data.trackIds.map((track_id) => ({ user_id: context.userId, track_id, ...(intake ? { intake } : {}) }));
     const { error } = await context.supabase.from("user_tracks").upsert(rows, { onConflict: "user_id,track_id", ignoreDuplicates: true });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -163,7 +173,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     });
 
     const messages = [
-      { role: "system", content: ut.track.ai_system_prompt + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.` },
+      { role: "system", content: withArchetype(ut.track.slug, ut.track.ai_system_prompt) + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.${ut.intake?.contract?.answer ? `\n\nThe user's transformation contract said: "${ut.intake.contract.answer}". Identity: "${ut.intake.contract.identity ?? ""}". Reference it gently when meaningful.` : ""}` },
       ...(history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
       { role: "user", content: data.content },
     ];
