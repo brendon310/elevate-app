@@ -160,8 +160,8 @@
     position: fixed; inset: 0; pointer-events: none; z-index: 1;
     background-image: var(--grain);
     background-size: 240px 240px;
-    opacity: 0.04;
-    mix-blend-mode: overlay;
+    opacity: 0.025;
+    mix-blend-mode: multiply;
   }
 
   /* Animated gradient mesh — slow shifting bokeh background */
@@ -171,16 +171,16 @@
   }
   .mesh-bg::before, .mesh-bg::after {
     content: ""; position: absolute; border-radius: 50%;
-    filter: blur(80px); opacity: 0.18; mix-blend-mode: screen;
+    filter: blur(80px); opacity: 0.12; mix-blend-mode: multiply;
     animation: float-orb 22s ease-in-out infinite;
   }
   .mesh-bg::before {
     width: 60vw; height: 60vw; left: -10vw; top: -20vw;
-    background: radial-gradient(circle, oklch(1 0 0 / 0.10), transparent 60%);
+    background: radial-gradient(circle, oklch(0.645 0.245 25 / 0.20), transparent 60%);
   }
   .mesh-bg::after {
     width: 55vw; height: 55vw; right: -15vw; bottom: -15vw;
-    background: radial-gradient(circle, oklch(0.645 0.245 25 / 0.18), transparent 60%);
+    background: radial-gradient(circle, oklch(0.875 0.185 95 / 0.22), transparent 60%);
     animation-delay: -11s;
   }
   .orb {
