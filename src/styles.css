@@ -251,11 +251,31 @@
   .grad-sunset { background-image: var(--grad-sunset); }
   .grad-aurora { background-image: var(--grad-aurora); }
 
-  /* Solid text colors only — no gradient clipping, no transparency */
-  .text-gradient { color: oklch(0.18 0 0); background: none; -webkit-background-clip: initial; background-clip: initial; }
-  .text-electric { color: var(--hue-red); background: none; -webkit-background-clip: initial; background-clip: initial; }
-  .text-aurora   { color: var(--hue-green); background: none; -webkit-background-clip: initial; background-clip: initial; }
-  .text-sunset   { color: var(--hue-red); background: none; -webkit-background-clip: initial; background-clip: initial; }
+  /* Gradient text — tuned for high contrast on the light #F5F5F5 background.
+     Both stops live in the dark/saturated end so text always reads crisp. */
+  .text-gradient {
+    background: linear-gradient(135deg, oklch(0.18 0 0), oklch(0.40 0 0));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .text-electric {
+    /* deep red → black — pops against light bg */
+    background: linear-gradient(135deg, oklch(0.55 0.235 25), oklch(0.20 0 0));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .text-aurora {
+    /* deep green → black */
+    background: linear-gradient(135deg, oklch(0.58 0.215 145), oklch(0.20 0 0));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .text-sunset {
+    /* amber → deep red — strong warm gradient that still reads on light */
+    background: linear-gradient(135deg, oklch(0.72 0.195 70), oklch(0.55 0.235 25));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
 
   .ambient-warm::before, .ambient-electric::before {
     content: ""; position: absolute; inset: -1px;
