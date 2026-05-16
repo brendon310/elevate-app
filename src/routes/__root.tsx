@@ -43,7 +43,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Elevate — Your AI growth companion" },
       { name: "description", content: "50 world-class AI coaches in your pocket. Build habits, quit vices, level up your life." },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Sora:wght@200..800&display=swap" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -65,6 +70,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <div className="grain-overlay" aria-hidden />
         <Outlet />
         <Toaster theme="dark" position="top-center" />
       </AuthProvider>

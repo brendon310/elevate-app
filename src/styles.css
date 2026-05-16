@@ -184,25 +184,4 @@
   .rise-in { animation: rise-in 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
 }
 
-/* Fonts */
-@font-face {
-  font-family: 'Sora';
-  font-style: normal;
-  font-weight: 100 800;
-  src: url('https://fonts.gstatic.com/s/sora/v14/xMQOuFFYT72X5wkB_18qmnndmSdSnk-DKQJRBg.woff2') format('woff2');
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 100 900;
-  src: url('https://fonts.gstatic.com/s/fraunces/v37/6NUh8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk.woff2') format('woff2');
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Fraunces';
-  font-style: italic;
-  font-weight: 100 900;
-  src: url('https://fonts.gstatic.com/s/fraunces/v37/6NUu8FyLNQOQZAnv9ZwPnvtuDsd5cBV9HnY36zM.woff2') format('woff2');
-  font-display: swap;
-}
+/* Fonts loaded via Google Fonts <link> in __root.tsx head */
