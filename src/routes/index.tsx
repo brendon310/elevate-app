@@ -31,7 +31,7 @@ function Landing() {
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground font-mono">A transformation engine · est. 2026</p>
           <h1 className="mt-6 font-display text-[clamp(3rem,9vw,7.5rem)] leading-[0.92] tracking-[-0.05em] font-bold">
             Become<br/>
-            <span className="text-electric text-yellow-400 bg-slate-50">who you</span><br/>
+            <span className="text-electric text-yellow-400">who you</span><br/>
             already are.
           </h1>
           <p className="mt-10 text-lg text-muted-foreground max-w-xl leading-relaxed">

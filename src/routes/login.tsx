@@ -59,7 +59,7 @@ function LoginPage() {
         </Link>
 
         <div className="depth-card rounded-[1.75rem] p-7">
-          <h1 className="font-display text-3xl leading-tight tracking-tight">{mode === "signin" ? "Welcome back." : <>Begin <span className="text-electric">again</span>.</>}</h1>
+          <h1 className="font-display text-3xl leading-tight tracking-tight">{mode === "signin" ? "Welcome back." : <>Begin <span className="text-electric text-yellow-400">again</span>.</>}</h1>
           <p className="text-sm text-muted-foreground mt-2">{mode === "signin" ? "Pick up where you left off." : "One question stands between you and day one."}</p>
 
           <button onClick={google} disabled={busy} className="mt-6 w-full rounded-xl border border-border bg-card/60 hover:bg-accent transition px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">

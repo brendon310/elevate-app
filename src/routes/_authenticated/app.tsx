@@ -63,7 +63,7 @@ function Dashboard() {
         <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono">{today}</p>
         <h1 className="mt-2 font-display text-[2.5rem] leading-[1] tracking-[-0.03em]">
           {greeting},<br/>
-          <span className="text-electric">friend.</span>
+          <span className="text-electric text-yellow-400">friend.</span>
         </h1>
         <p className="mt-3 text-base text-foreground/80 max-w-md leading-snug">{motivation}</p>
       </motion.header>
@@ -71,7 +71,7 @@ function Dashboard() {
       {/* Stat strip */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
         className="grid grid-cols-3 gap-3 mb-8">
-        <Stat label="Active" value={String(data?.length ?? 0)} hue="text-electric text-lime-500" />
+        <Stat label="Active" value={String(data?.length ?? 0)} hue="text-electric text-yellow-400" />
         <Stat label="Streak" value={String(totalStreak)} hue="text-sunset" icon={<Flame className="h-4 w-4 flame text-[color:var(--highlight)]"/>}/>
         <Stat label="Today" value={String((data ?? []).filter((d:any)=>d.last_check_in_date === new Date().toISOString().slice(0,10)).length)} hue="text-aurora" suffix={`/${data?.length ?? 0}`}/>
       </motion.div>
