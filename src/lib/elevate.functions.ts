@@ -173,7 +173,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     });
 
     const messages = [
-      { role: "system", content: withArchetype(ut.track.slug, ut.track.ai_system_prompt) + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.${ut.intake?.contract?.answer ? `\n\nThe user's transformation contract said: "${ut.intake.contract.answer}". Identity: "${ut.intake.contract.identity ?? ""}". Reference it gently when meaningful.` : ""}` },
+      { role: "system", content: withArchetype(ut.track.slug, ut.track.ai_system_prompt) + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.${(() => { const c: any = (ut.intake as any)?.contract; return c?.answer ? `\n\nThe user's transformation contract said: "${c.answer}". Identity: "${c.identity ?? ""}". Reference it gently when meaningful.` : ""; })()}` },
       ...(history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
       { role: "user", content: data.content },
     ];
