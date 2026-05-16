@@ -50,7 +50,6 @@ function Dashboard() {
     if (!isLoading && data && data.length === 0) nav({ to: "/onboarding" });
   }, [isLoading, data, nav]);
 
-  const totalStreak = (data ?? []).reduce((s: number, t: any) => s + (t.current_streak || 0), 0);
   const motivation = useMemo(() => MOTIVATIONS[new Date().getDate() % MOTIVATIONS.length], []);
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const hour = new Date().getHours();
