@@ -172,15 +172,3 @@ function Dashboard() {
   );
 }
 
-function Stat({ label, value, suffix, hue, icon }: { label: string; value: string; suffix?: string; hue: string; icon?: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl p-3.5 depth-card">
-      <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-mono mb-1.5 flex items-center gap-1.5">
-        {icon}{label}
-      </p>
-      <p className={`font-display text-3xl leading-none num ${hue}`}>
-        {value}{suffix && <span className="text-base text-muted-foreground">{suffix}</span>}
-      </p>
-    </div>
-  );
-}
