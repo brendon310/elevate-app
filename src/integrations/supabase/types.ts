@@ -38,6 +38,104 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_days: {
+        Row: {
+          checkin_prompt: string
+          completed_at: string | null
+          created_at: string
+          day_number: number
+          description: string
+          id: string
+          journey_id: string
+          reflection: string
+          science: string
+          task: string
+          title: string
+          user_id: string
+          user_note: string | null
+        }
+        Insert: {
+          checkin_prompt: string
+          completed_at?: string | null
+          created_at?: string
+          day_number: number
+          description: string
+          id?: string
+          journey_id: string
+          reflection: string
+          science: string
+          task: string
+          title: string
+          user_id: string
+          user_note?: string | null
+        }
+        Update: {
+          checkin_prompt?: string
+          completed_at?: string | null
+          created_at?: string
+          day_number?: number
+          description?: string
+          id?: string
+          journey_id?: string
+          reflection?: string
+          science?: string
+          task?: string
+          title?: string
+          user_id?: string
+          user_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_days_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journeys: {
+        Row: {
+          created_at: string
+          generated_through: number
+          id: string
+          motivation: string
+          obstacle: string
+          starting_point: string
+          status: string
+          total_days: number
+          updated_at: string
+          user_id: string
+          user_track_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_through?: number
+          id?: string
+          motivation?: string
+          obstacle?: string
+          starting_point: string
+          status?: string
+          total_days: number
+          updated_at?: string
+          user_id: string
+          user_track_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_through?: number
+          id?: string
+          motivation?: string
+          obstacle?: string
+          starting_point?: string
+          status?: string
+          total_days?: number
+          updated_at?: string
+          user_id?: string
+          user_track_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

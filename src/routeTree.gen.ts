@@ -17,7 +17,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
-import { Route as AuthenticatedTrackRouteImport } from './routes/_authenticated/track.'
+import { Route as AuthenticatedTrackSlugRouteImport } from './routes/_authenticated/track.$slug'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -58,9 +58,9 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedTrackRoute = AuthenticatedTrackRouteImport.update({
-  id: '/track/',
-  path: '/track/',
+const AuthenticatedTrackSlugRoute = AuthenticatedTrackSlugRouteImport.update({
+  id: '/track/$slug',
+  path: '/track/$slug',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
@@ -72,7 +72,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tracks': typeof AuthenticatedTracksRoute
-  '/track/': typeof AuthenticatedTrackRoute
+  '/track/$slug': typeof AuthenticatedTrackSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,7 +82,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tracks': typeof AuthenticatedTracksRoute
-  '/track': typeof AuthenticatedTrackRoute
+  '/track/$slug': typeof AuthenticatedTrackSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,7 +94,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tracks': typeof AuthenticatedTracksRoute
-  '/_authenticated/track/': typeof AuthenticatedTrackRoute
+  '/_authenticated/track/$slug': typeof AuthenticatedTrackSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -106,7 +106,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/tracks'
-    | '/track/'
+    | '/track/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,7 +116,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/tracks'
-    | '/track'
+    | '/track/$slug'
   id:
     | '__root__'
     | '/'
@@ -127,7 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/tracks'
-    | '/_authenticated/track/'
+    | '/_authenticated/track/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -194,11 +194,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/track/': {
-      id: '/_authenticated/track/'
-      path: '/track'
-      fullPath: '/track/'
-      preLoaderRoute: typeof AuthenticatedTrackRouteImport
+    '/_authenticated/track/$slug': {
+      id: '/_authenticated/track/$slug'
+      path: '/track/$slug'
+      fullPath: '/track/$slug'
+      preLoaderRoute: typeof AuthenticatedTrackSlugRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
@@ -210,7 +210,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTracksRoute: typeof AuthenticatedTracksRoute
-  AuthenticatedTrackRoute: typeof AuthenticatedTrackRoute
+  AuthenticatedTrackSlugRoute: typeof AuthenticatedTrackSlugRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -219,7 +219,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTracksRoute: AuthenticatedTracksRoute,
-  AuthenticatedTrackRoute: AuthenticatedTrackRoute,
+  AuthenticatedTrackSlugRoute: AuthenticatedTrackSlugRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
