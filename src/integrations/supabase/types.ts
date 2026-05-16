@@ -14,7 +14,216 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      insights: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      track_logs: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          log_date: string
+          mood: number | null
+          note: string | null
+          user_id: string
+          user_track_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          log_date?: string
+          mood?: number | null
+          note?: string | null
+          user_id: string
+          user_track_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          log_date?: string
+          mood?: number | null
+          note?: string | null
+          user_id?: string
+          user_track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_logs_user_track_id_fkey"
+            columns: ["user_track_id"]
+            isOneToOne: false
+            referencedRelation: "user_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+          user_track_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+          user_track_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+          user_track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_messages_user_track_id_fkey"
+            columns: ["user_track_id"]
+            isOneToOne: false
+            referencedRelation: "user_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks_catalog: {
+        Row: {
+          ai_system_prompt: string
+          category: string
+          color: string
+          frameworks: string
+          icon: string
+          id: string
+          name: string
+          short_description: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          ai_system_prompt: string
+          category: string
+          color: string
+          frameworks: string
+          icon: string
+          id?: string
+          name: string
+          short_description: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          ai_system_prompt?: string
+          category?: string
+          color?: string
+          frameworks?: string
+          icon?: string
+          id?: string
+          name?: string
+          short_description?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      user_tracks: {
+        Row: {
+          current_streak: number
+          freezes_remaining: number
+          id: string
+          intake: Json | null
+          last_log_date: string | null
+          longest_streak: number
+          started_at: string
+          status: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          freezes_remaining?: number
+          id?: string
+          intake?: Json | null
+          last_log_date?: string | null
+          longest_streak?: number
+          started_at?: string
+          status?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          freezes_remaining?: number
+          id?: string
+          intake?: Json | null
+          last_log_date?: string | null
+          longest_streak?: number
+          started_at?: string
+          status?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
