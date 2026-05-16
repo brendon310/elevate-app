@@ -48,7 +48,7 @@ function Onboarding() {
             <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-8">One question</p>
             <h1 className="font-display text-[clamp(2rem,6vw,4.5rem)] leading-[1.02] tracking-[-0.04em] font-semibold">
               What is the one thing that,<br/>
-              <span className="text-electric">if you changed it</span>,<br/>
+              <span className="text-electric text-yellow-400">if you changed it</span>,<br/>
               would change everything?
             </h1>
             <form onSubmit={(e) => { e.preventDefault(); if (answer.trim().length >= 3) ask.mutate(); }} className="mt-12">
@@ -97,7 +97,7 @@ function Onboarding() {
             <p className="mt-3 text-[11px] uppercase tracking-[0.3em] font-mono text-muted-foreground">{result.track.category}</p>
             <p className="mt-8 text-xl leading-relaxed text-foreground/90">"{result.reason}"</p>
             {result.identity && (
-              <p className="mt-6 text-sm text-electric font-semibold">{result.identity}</p>
+                <p className="mt-6 text-sm text-electric text-yellow-400 font-semibold">{result.identity}</p>
             )}
             <div className="mt-10 flex flex-col items-center gap-4">
               <button onClick={()=>commit.mutate()} disabled={commit.isPending}
