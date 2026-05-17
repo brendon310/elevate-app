@@ -337,11 +337,34 @@ function JourneyView({ slug, data }: any) {
 
           {!today.completed_at ? (
             <div className="mt-5">
-              <textarea
-                value={note}
-                onChange={e => { setNote(e.target.value); setValidationError(null); }}
-                placeholder={today.checkin_prompt}
-                className={`w-full rounded-2xl bg-input border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition ${validationError ? "border-[color:var(--hue-red)] ring-1 ring-[color:var(--hue-red)]" : "border-border"}`} />
+              <div className="relative">
+                <textarea
+                  value={note}
+                  onChange={e => {
+                    setNote(e.target.value);
+                    setValidationError(null);
+                    if (validationState !== "checking") setValidationState("idle");
+                  }}
+                  onBlur={runValidation}
+                  placeholder={today.checkin_prompt}
+                  className={`w-full rounded-2xl bg-input border p-4 pr-10 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition ${
+                    validationState === "invalid"
+                      ? "border-[color:var(--hue-red)] ring-1 ring-[color:var(--hue-red)]"
+                      : validationState === "valid"
+                      ? "border-[color:var(--hue-green)] ring-1 ring-[color:var(--hue-green)]"
+                      : "border-border"
+                  }`} />
+                <div className="absolute right-3 top-3 flex items-center justify-center h-6 w-6">
+                  {validationState === "checking" && (
+                    <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--primary)] pulse-dot" aria-label="Validating" />
+                  )}
+                  {validationState === "valid" && (
+                    <span className="checkmark-pop inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--hue-green)] text-white">
+                      <Check className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                </div>
+              </div>
               {validationError && (
                 <p className="mt-2 text-sm font-medium text-[color:var(--hue-red)] shake">{validationError}</p>
               )}
@@ -351,11 +374,18 @@ function JourneyView({ slug, data }: any) {
                   if (!trimmed) {
                     const msg = WARNINGS[Math.floor(Math.random() * WARNINGS.length)];
                     setValidationError(msg);
+                    setValidationState("invalid");
                     return;
                   }
+                  if (validationState === "invalid") {
+                    // already showing AI message; re-roll a new one to nudge
+                    setValidationError(AI_WARNINGS[Math.floor(Math.random() * AI_WARNINGS.length)]);
+                    return;
+                  }
+                  if (validationState === "checking") return;
                   complete.mutate(today.id);
                 }}
-                disabled={complete.isPending}
+                disabled={complete.isPending || validationState === "checking"}
                 className={`btn-chunk mt-4 rounded-full text-white px-7 py-3.5 text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2 ${complete.isPending ? "breathe" : ""}`}
                 style={{ background: trackHueGradient(slug), boxShadow: `0 16px 36px -10px color-mix(in oklab, var(${trackHueVar(slug)}) 65%, transparent)` }}>
                 <Check className="h-4 w-4"/> {complete.isPending ? "Listening…" : `Complete day ${today.day_number}`}
