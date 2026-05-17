@@ -1,11 +1,6 @@
-import type { Handler, HandlerEvent } from "@netlify/functions";
-
-// Build artifact produced by `npm run build` → dist/server/index.js.
-// Not present at TypeScript compile time; esbuild bundles it at deploy time.
-// @ts-expect-error
 import serverHandler from "../../dist/server/index.js";
 
-function buildRequest(event: HandlerEvent): Request {
+function buildRequest(event) {
   const headers = new Headers();
   for (const [key, value] of Object.entries(event.headers)) {
     if (value !== undefined) headers.set(key, value);
@@ -22,10 +17,10 @@ function buildRequest(event: HandlerEvent): Request {
   });
 }
 
-export const handler: Handler = async (event) => {
-  const response: Response = await serverHandler(buildRequest(event));
+export const handler = async (event) => {
+  const response = await serverHandler(buildRequest(event));
 
-  const headers: Record<string, string> = {};
+  const headers = {};
   response.headers.forEach((value, key) => {
     headers[key] = value;
   });
