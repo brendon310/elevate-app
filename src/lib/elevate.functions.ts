@@ -477,3 +477,44 @@ export const getMilestoneMessage = createServerFn({ method: "POST" })
     const out = await aiJSON(key, cat.ai_system_prompt + "\n\nReturn strict JSON: { message: string (2-3 sentences celebrating the milestone, warm and specific), science: string (1-2 sentences of what happens in the brain/body at this point) }", `Milestone day ${data.dayNumber} on "${cat.name}".`);
     return { message: String(out.message ?? ""), science: String(out.science ?? "") };
   });
+
+export const validateCheckin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    slug: z.string().min(1).max(100),
+    dayNumber: z.number().int().min(1).max(365),
+    text: z.string().min(1).max(2000),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const trimmed = data.text.trim();
+    if (trimmed.length < 8) {
+      return { valid: false, reason: "Too short to be a real reflection." };
+    }
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) return { valid: true, reason: "" };
+    const { data: cat } = await context.supabase
+      .from("tracks_catalog").select("name").eq("slug", data.slug).single();
+    const trackName = cat?.name ?? data.slug;
+    try {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "You are a strict but funny check-in validator for a self-improvement app. The user is on a specific journey (provided in context). Evaluate if their response is genuine, relevant, and meaningful. A real response mentions specific situations, feelings, thoughts, or experiences related to their journey. Respond ONLY with a JSON object: {valid: true/false, reason: 'one short sentence explaining why if invalid'}. Be strict — vague one-word answers, random text, jokes, and nonsense are invalid. A genuine 2-3 sentence personal reflection is valid." },
+            { role: "user", content: `Track: ${trackName}\nDay: ${data.dayNumber}\n\nUser response:\n"""${trimmed}"""` },
+          ],
+        }),
+      });
+      if (!res.ok) return { valid: true, reason: "" }; // fail-open
+      const json = await res.json();
+      const txt: string = json.choices?.[0]?.message?.content ?? "{}";
+      let parsed: any;
+      try { parsed = JSON.parse(txt); } catch { parsed = JSON.parse(txt.replace(/^```json\s*|```$/g, "")); }
+      return { valid: Boolean(parsed?.valid), reason: String(parsed?.reason ?? "") };
+    } catch {
+      return { valid: true, reason: "" }; // fail-open on network errors
+    }
+  });
