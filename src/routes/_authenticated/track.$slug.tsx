@@ -296,10 +296,25 @@ function JourneyView({ slug, data }: any) {
 
           {!today.completed_at ? (
             <div className="mt-5">
-              <textarea value={note} onChange={e=>setNote(e.target.value)}
+              <textarea
+                value={note}
+                onChange={e => { setNote(e.target.value); setValidationError(null); }}
                 placeholder={today.checkin_prompt}
-                className="w-full rounded-2xl bg-input border border-border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition" />
-              <button onClick={()=>complete.mutate(today.id)} disabled={complete.isPending}
+                className={`w-full rounded-2xl bg-input border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition ${validationError ? "border-[color:var(--hue-red)] ring-1 ring-[color:var(--hue-red)]" : "border-border"}`} />
+              {validationError && (
+                <p className="mt-2 text-sm font-medium text-[color:var(--hue-red)] shake">{validationError}</p>
+              )}
+              <button
+                onClick={() => {
+                  const trimmed = note.trim();
+                  if (!trimmed) {
+                    const msg = WARNINGS[Math.floor(Math.random() * WARNINGS.length)];
+                    setValidationError(msg);
+                    return;
+                  }
+                  complete.mutate(today.id);
+                }}
+                disabled={complete.isPending}
                 className={`btn-chunk mt-4 rounded-full text-white px-7 py-3.5 text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2 ${complete.isPending ? "breathe" : ""}`}
                 style={{ background: trackHueGradient(slug), boxShadow: `0 16px 36px -10px color-mix(in oklab, var(${trackHueVar(slug)}) 65%, transparent)` }}>
                 <Check className="h-4 w-4"/> {complete.isPending ? "Listening…" : `Complete day ${today.day_number}`}
