@@ -1,0 +1,47 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+
+function publicSupabase() {
+  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Supabase env not configured");
+  return createClient(url as string, key as string, { auth: { persistSession: false } });
+}
+
+export const getPublicCatalog = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const sb = publicSupabase();
+    const { data, error } = await sb
+      .from("tracks_catalog")
+      .select("id,slug,name,category,short_description,sort_order")
+      .order("sort_order");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const getCoachResponse = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ answer: z.string().min(10).max(2000) }).parse(d))
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("AI is not configured");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a wise, warm, deeply human life coach. The user just answered the question: 'What is the one thing that, if you changed it, would change everything?'. Write a SHORT personal response of exactly 3 to 4 sentences that: (1) acknowledges what they wrote specifically, in their own words, (2) names the underlying desire behind it, (3) tells them — clearly and without hedging — that this journey is possible. End with EXACTLY this sentence as the final line: I'll be with you every step of the way. No greetings. No preamble. No quotes. No emojis. No markdown. Plain text only.",
+          },
+          { role: "user", content: data.answer },
+        ],
+      }),
+    });
+    if (!res.ok) throw new Error(`AI error ${res.status}`);
+    const json = await res.json();
+    const message: string = (json.choices?.[0]?.message?.content ?? "").trim();
+    return { message };
+  });
