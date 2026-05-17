@@ -571,27 +571,11 @@ export const toggleFlame = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ postId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const [{ data: existing }, { data: post }] = await Promise.all([
-      context.supabase.from("community_post_flames")
-        .select("post_id").eq("post_id", data.postId).eq("user_id", context.userId).maybeSingle(),
-      context.supabase.from("community_posts")
-        .select("flame_count").eq("id", data.postId).single(),
-    ]);
-    const currentCount = post?.flame_count ?? 0;
-
-    if (existing) {
-      await context.supabase.from("community_post_flames")
-        .delete().eq("post_id", data.postId).eq("user_id", context.userId);
-      const newCount = Math.max(0, currentCount - 1);
-      await context.supabase.from("community_posts").update({ flame_count: newCount }).eq("id", data.postId);
-      return { flamed: false, flameCount: newCount };
-    } else {
-      await context.supabase.from("community_post_flames")
-        .insert({ post_id: data.postId, user_id: context.userId });
-      const newCount = currentCount + 1;
-      await context.supabase.from("community_posts").update({ flame_count: newCount }).eq("id", data.postId);
-      return { flamed: true, flameCount: newCount };
-    }
+    const { data: rows, error } = await context.supabase
+      .rpc("toggle_community_flame", { _post_id: data.postId });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return { flamed: Boolean(row?.flamed), flameCount: Number(row?.flame_count ?? 0) };
   });
 
 export const validateCheckin = createServerFn({ method: "POST" })
