@@ -48,7 +48,7 @@ function LoginPage() {
 
   const google = async () => {
     setBusy(true);
-    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/app" });
+    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/login" });
     if (res.error) { toast.error(res.error.message); setBusy(false); }
   };
 
