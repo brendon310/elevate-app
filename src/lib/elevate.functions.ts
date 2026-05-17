@@ -542,6 +542,22 @@ export const createCommunityPost = createServerFn({ method: "POST" })
       return { approved: false, reason: basic.reason ?? "blocked" };
     }
 
+    // Rate limit: max 3 posts per hour per user per track.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount, error: countError } = await context.supabase
+      .from("community_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId)
+      .eq("track_slug", data.trackSlug)
+      .gte("created_at", oneHourAgo);
+    if (countError) throw new Error(countError.message);
+    if ((recentCount ?? 0) >= 3) {
+      return {
+        approved: false,
+        reason: "Easy there. 3 posts per hour is the limit — your words already landed. Come back later. ⏳",
+      };
+    }
+
     // Layer 2 (optional): Claude moderation as a deeper backstop.
     // Fail-OPEN on any error — the blocklist already passed and we don't
     // want every post to break when credits run out.
