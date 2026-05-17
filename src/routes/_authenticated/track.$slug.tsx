@@ -144,6 +144,13 @@ function JourneyView({ slug, data }: any) {
   const validateFn = useServerFn(validateCheckin);
   const validateReqId = useRef(0);
 
+  useEffect(() => {
+    if (!openDay) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenDay(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openDay]);
+
   // Auto-generate next chunk when within 3 days of edge
   useEffect(() => {
     if (!journey) return;
