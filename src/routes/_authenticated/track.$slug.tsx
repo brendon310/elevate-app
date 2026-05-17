@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   getJourney, startJourney, completeJourneyDay, ensureDaysGenerated,
   getReEntryMessage, getMilestoneMessage, sendCoachMessage, getTrackDetail,
+  validateCheckin,
 } from "@/lib/elevate.functions";
 import { CATEGORY_CLASS, trackHueGradient, trackHueVar } from "@/lib/categories";
 
@@ -139,6 +140,9 @@ function JourneyView({ slug, data }: any) {
   const [reentry, setReentry] = useState<string | null>(null);
   const [burst, setBurst] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationState, setValidationState] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const validateFn = useServerFn(validateCheckin);
+  const validateReqId = useRef(0);
 
   // Auto-generate next chunk when within 3 days of edge
   useEffect(() => {
@@ -182,10 +186,47 @@ function JourneyView({ slug, data }: any) {
     "The only bad answer is no answer. Go.",
   ];
 
+  const AI_WARNINGS = [
+    "Your coach has a PhD in detecting nonsense. Try again. 🎓",
+    "That answer and your journey have nothing in common. 👀",
+    "The AI read that and physically cringed. Be real. 😬",
+    "Keyboard smashing is not a reflection. Come on. ⌨️",
+    "Your future self deserves a real answer. Give them one. 🔮",
+    `The coach knows what day ${currentDayNumber} of this journey actually feels like. That's not it. 💀`,
+    "Detected: zero effort. Required: at least some effort. 📊",
+    "A tronco a day keeps progress away. Write something real. 🪵",
+    "Even your subconscious knows that wasn't genuine. Try again. 🧠",
+  ];
+
+  const runValidation = async () => {
+    const trimmed = note.trim();
+    if (!trimmed || !today) {
+      setValidationState("idle");
+      return;
+    }
+    const reqId = ++validateReqId.current;
+    setValidationState("checking");
+    setValidationError(null);
+    try {
+      const res = await validateFn({ data: { slug, dayNumber: today.day_number, text: trimmed } });
+      if (reqId !== validateReqId.current) return;
+      if (res.valid) {
+        setValidationState("valid");
+        setValidationError(null);
+      } else {
+        setValidationState("invalid");
+        setValidationError(AI_WARNINGS[Math.floor(Math.random() * AI_WARNINGS.length)]);
+      }
+    } catch {
+      if (reqId !== validateReqId.current) return;
+      setValidationState("idle"); // fail-open
+    }
+  };
+
   const complete = useMutation({
     mutationFn: (dayId: string) => completeFn({ data: { dayId, note: note.trim() || undefined } }),
     onSuccess: async (r: any) => {
-      setNote(""); setOpenDay(null); setValidationError(null);
+      setNote(""); setOpenDay(null); setValidationError(null); setValidationState("idle");
       setBurst(true); setTimeout(()=>setBurst(false), 1200);
       qc.invalidateQueries({ queryKey: ["journey", slug] });
       qc.invalidateQueries({ queryKey: ["userTracks"] });
