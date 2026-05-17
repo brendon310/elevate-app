@@ -7,20 +7,15 @@ export const deleteAccount = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const uid = context.userId;
     // Clean app data (RLS-bypassing admin client). Order: child tables first.
-    const tables = [
-      "community_post_flames",
-      "community_posts",
-      "track_messages",
-      "track_logs",
-      "journey_days",
-      "journeys",
-      "insights",
-      "user_tracks",
-      "profiles",
-    ] as const;
-    for (const t of tables) {
-      await supabaseAdmin.from(t).delete().eq(t === "profiles" ? "id" : "user_id", uid);
-    }
+    await supabaseAdmin.from("community_post_flames").delete().eq("user_id", uid);
+    await supabaseAdmin.from("community_posts").delete().eq("user_id", uid);
+    await supabaseAdmin.from("track_messages").delete().eq("user_id", uid);
+    await supabaseAdmin.from("track_logs").delete().eq("user_id", uid);
+    await supabaseAdmin.from("journey_days").delete().eq("user_id", uid);
+    await supabaseAdmin.from("journeys").delete().eq("user_id", uid);
+    await supabaseAdmin.from("insights").delete().eq("user_id", uid);
+    await supabaseAdmin.from("user_tracks").delete().eq("user_id", uid);
+    await supabaseAdmin.from("profiles").delete().eq("id", uid);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(uid);
     if (error) throw new Error(error.message);
     return { ok: true };
