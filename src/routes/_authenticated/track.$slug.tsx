@@ -138,6 +138,7 @@ function JourneyView({ slug, data }: any) {
   const [milestone, setMilestone] = useState<{ day: number; message: string; science: string } | null>(null);
   const [reentry, setReentry] = useState<string | null>(null);
   const [burst, setBurst] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Auto-generate next chunk when within 3 days of edge
   useEffect(() => {
