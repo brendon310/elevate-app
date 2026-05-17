@@ -21,6 +21,47 @@ function LoginPage() {
   }, []);
   useEffect(() => { if (fromBegin) setMode("signup"); }, [fromBegin]);
 
+  useEffect(() => {
+    const completeOAuthSession = async () => {
+      const hash = window.location.hash;
+      if (!hash.includes("access_token")) return;
+
+      setBusy(true);
+      const params = new URLSearchParams(hash.slice(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const errorDescription = params.get("error_description");
+
+      if (errorDescription) {
+        toast.error(errorDescription);
+        setBusy(false);
+        return;
+      }
+
+      if (!accessToken || !refreshToken) {
+        toast.error("Google sign-in could not be completed. Please try again.");
+        setBusy(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        setBusy(false);
+        return;
+      }
+
+      window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+      nav({ to: "/app" });
+    };
+
+    completeOAuthSession();
+  }, [nav]);
+
   useEffect(() => { if (!loading && user) nav({ to: "/app" }); }, [user, loading, nav]);
 
   const submit = async (e: React.FormEvent) => {
