@@ -470,14 +470,28 @@ function JourneyView({ slug, data }: any) {
 
       {/* Day detail modal */}
       {openDay && (
-        <div className="fixed inset-0 z-50 bg-background  flex items-end sm:items-center justify-center p-4" onClick={()=>setOpenDay(null)}>
-          <div className="glass rounded-3xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 overscroll-contain"
+          onClick={() => setOpenDay(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-card border border-border rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg p-6 max-h-[85vh] overflow-y-auto shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 sticky top-0 bg-card -mx-6 px-6 -mt-6 pt-6 pb-3 z-10">
               <div>
                 <p className="text-xs uppercase tracking-widest text-muted-foreground">Day {openDay.day_number}</p>
                 <h3 className="text-xl font-bold mt-1">{openDay.title}</h3>
               </div>
-              <button onClick={()=>setOpenDay(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4"/></button>
+              <button
+                onClick={() => setOpenDay(null)}
+                aria-label="Close"
+                className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent hover:bg-accent/70 text-foreground"
+              >
+                <X className="h-4 w-4"/>
+              </button>
             </div>
             <p className="text-sm text-muted-foreground mt-3">{openDay.description}</p>
             <div className="mt-4 space-y-3">
