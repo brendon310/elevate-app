@@ -11,6 +11,7 @@ import {
   validateCheckin,
 } from "@/lib/elevate.functions";
 import { CATEGORY_CLASS, trackHueGradient, trackHueVar } from "@/lib/categories";
+import { CommunityBoard } from "@/components/community-board";
 
 export const Route = createFileRoute("/_authenticated/track/$slug")({ component: TrackDetail });
 
@@ -138,6 +139,7 @@ function JourneyView({ slug, data }: any) {
   const [note, setNote] = useState("");
   const [milestone, setMilestone] = useState<{ day: number; message: string; science: string } | null>(null);
   const [reentry, setReentry] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [burst, setBurst] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [validationState, setValidationState] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
@@ -291,7 +293,18 @@ function JourneyView({ slug, data }: any) {
 
         <div className="relative">
           <p className="text-[11px] uppercase tracking-[0.3em] text-white font-mono">{catalog.category}</p>
-          <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] mt-2 text-white">{catalog.name}</h1>
+          <div className="flex items-start justify-between gap-3 mt-2">
+            <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] text-white">{catalog.name}</h1>
+            <button
+              onClick={() => {
+                setComposerOpen(true);
+                document.getElementById("community-board")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="shrink-0 btn-chunk mt-1 rounded-full bg-white/20 hover:bg-white/30 text-white px-3.5 py-2 text-xs font-semibold backdrop-blur-sm transition"
+            >
+              Share ↗
+            </button>
+          </div>
           {hasIdentity && (
             <p className="mt-3 text-sm text-white">You are someone who <span className="font-semibold">{identityVerb}s</span>.</p>
           )}
@@ -441,6 +454,16 @@ function JourneyView({ slug, data }: any) {
           </div>
         </div>
       </section>
+
+      {/* Community board */}
+      <div id="community-board">
+        <CommunityBoard
+          slug={slug}
+          currentDayNumber={currentDayNumber}
+          composerOpen={composerOpen}
+          onComposerClose={() => setComposerOpen(false)}
+        />
+      </div>
 
       {/* AI coach chat */}
       <section className="mt-6 depth-card rounded-3xl p-5 flex flex-col h-[500px]">

@@ -478,6 +478,122 @@ export const getMilestoneMessage = createServerFn({ method: "POST" })
     return { message: String(out.message ?? ""), science: String(out.science ?? "") };
   });
 
+// ============================================================
+// COMMUNITY BOARD
+// ============================================================
+
+export const listCommunityPosts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ trackSlug: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: posts, error } = await context.supabase
+      .from("community_posts")
+      .select("*")
+      .eq("track_slug", data.trackSlug)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    if (!posts || posts.length === 0) return [];
+
+    const postIds = posts.map((p) => p.id);
+    const { data: flames } = await context.supabase
+      .from("community_post_flames")
+      .select("post_id")
+      .eq("user_id", context.userId)
+      .in("post_id", postIds);
+
+    const flamedSet = new Set((flames ?? []).map((f) => f.post_id));
+    return posts.map((p) => ({ ...p, user_has_flamed: flamedSet.has(p.id) }));
+  });
+
+export const createCommunityPost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    trackSlug: z.string().min(1).max(120),
+    content: z.string().min(10).max(280),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Resolve day_number from user's current streak on this track
+    let dayNumber = 0;
+    const { data: cat } = await context.supabase
+      .from("tracks_catalog").select("id").eq("slug", data.trackSlug).single();
+    if (cat) {
+      const { data: ut } = await context.supabase
+        .from("user_tracks").select("current_streak")
+        .eq("user_id", context.userId).eq("track_id", cat.id).maybeSingle();
+      dayNumber = ut?.current_streak ?? 0;
+    }
+
+    // Claude AI moderation
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    let approved = true;
+    if (apiKey) {
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 100,
+            system: "You are a content moderator for a self-improvement community. The user is sharing a reflection about their personal growth journey. Reject any content that contains: sexual references, vulgar language, offensive content, spam, content unrelated to personal growth or the specific track topic, or anything not suitable for a family-friendly environment. Respond ONLY with JSON: {\"approved\": true/false, \"reason\": \"short reason if rejected\"}",
+            messages: [{ role: "user", content: data.content }],
+          }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const text: string = json.content?.[0]?.text ?? "{}";
+          let parsed: any;
+          try { parsed = JSON.parse(text); } catch { parsed = { approved: true }; }
+          approved = Boolean(parsed?.approved ?? true);
+        }
+      } catch {
+        approved = true; // fail-open on network errors
+      }
+    }
+
+    if (!approved) return { approved: false };
+
+    const { error } = await context.supabase.from("community_posts").insert({
+      track_slug: data.trackSlug,
+      user_id: context.userId,
+      content: data.content,
+      day_number: dayNumber,
+    });
+    if (error) throw new Error(error.message);
+    return { approved: true };
+  });
+
+export const toggleFlame = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ postId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const [{ data: existing }, { data: post }] = await Promise.all([
+      context.supabase.from("community_post_flames")
+        .select("post_id").eq("post_id", data.postId).eq("user_id", context.userId).maybeSingle(),
+      context.supabase.from("community_posts")
+        .select("flame_count").eq("id", data.postId).single(),
+    ]);
+    const currentCount = post?.flame_count ?? 0;
+
+    if (existing) {
+      await context.supabase.from("community_post_flames")
+        .delete().eq("post_id", data.postId).eq("user_id", context.userId);
+      const newCount = Math.max(0, currentCount - 1);
+      await context.supabase.from("community_posts").update({ flame_count: newCount }).eq("id", data.postId);
+      return { flamed: false, flameCount: newCount };
+    } else {
+      await context.supabase.from("community_post_flames")
+        .insert({ post_id: data.postId, user_id: context.userId });
+      const newCount = currentCount + 1;
+      await context.supabase.from("community_posts").update({ flame_count: newCount }).eq("id", data.postId);
+      return { flamed: true, flameCount: newCount };
+    }
+  });
+
 export const validateCheckin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
