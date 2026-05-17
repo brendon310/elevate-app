@@ -43,7 +43,7 @@ function ArcRing({ value, hueVar, size = 84 }: { value: number; hueVar: string; 
 }
 
 function SkeletonCard() {
-  return <div className="snap-start shrink-0 w-[260px] h-[340px] rounded-[2rem] bg-muted animate-pulse" />;
+  return <div className="snap-start shrink-0 w-[260px] h-[340px] rounded-[20px] bg-muted animate-pulse" />;
 }
 
 function SkeletonRow() {
