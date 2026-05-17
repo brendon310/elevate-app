@@ -146,9 +146,13 @@ function JourneyView({ slug, data }: any) {
 
   useEffect(() => {
     if (!openDay) return;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenDay(null); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
   }, [openDay]);
 
   // Auto-generate next chunk when within 3 days of edge
@@ -478,13 +482,13 @@ function JourneyView({ slug, data }: any) {
       {/* Day detail modal */}
       {openDay && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 overscroll-contain"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 overflow-hidden overscroll-contain"
           onClick={() => setOpenDay(null)}
           role="dialog"
           aria-modal="true"
         >
           <div
-            className="bg-card border border-border rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg p-6 max-h-[85vh] overflow-y-auto shadow-2xl"
+            className="bg-card border border-border rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg p-6 max-h-[85dvh] overflow-y-auto overscroll-contain shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 sticky top-0 bg-card -mx-6 px-6 -mt-6 pt-6 pb-3 z-10">
