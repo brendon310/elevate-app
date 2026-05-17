@@ -1,18 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
-
-function publicSupabase() {
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error("Supabase env not configured");
-  return createClient(url as string, key as string, { auth: { persistSession: false } });
-}
+import { supabase } from "@/integrations/supabase/client";
 
 export const getPublicCatalog = createServerFn({ method: "GET" })
   .handler(async () => {
-    const sb = publicSupabase();
-    const { data, error } = await sb
+    const { data, error } = await supabase
       .from("tracks_catalog")
       .select("id,slug,name,category,short_description,sort_order")
       .order("sort_order");
