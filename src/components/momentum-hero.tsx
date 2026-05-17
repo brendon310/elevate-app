@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
-import { Flame, Zap, AlertTriangle, Sparkles } from "lucide-react";
+import { Flame, Zap, AlertTriangle, Sparkles, Crown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import confetti from "canvas-confetti";
 import {
   computeMomentum,
   evolutionFor,
@@ -10,6 +13,7 @@ import {
   maxStreak,
   type TrackLike,
 } from "@/lib/momentum";
+import { getPeakStatus, markPeakReached } from "@/lib/peak.functions";
 
 function useCountUp(target: number, duration = 900) {
   const [v, setV] = useState(0);
@@ -35,6 +39,32 @@ export function MomentumHero({ tracks }: { tracks: TrackLike[] }) {
   const atRisk = atRiskTracks(tracks);
   const animated = useCountUp(m.score);
   const pct = m.score / 1000;
+  const isMaxed = m.score >= 1000;
+
+  // Persistent "1000 Club" badge — comes from the profile.
+  const qc = useQueryClient();
+  const fetchPeak = useServerFn(getPeakStatus);
+  const markPeak = useServerFn(markPeakReached);
+  const { data: peak } = useQuery({
+    queryKey: ["peak-status"],
+    queryFn: () => fetchPeak(),
+    staleTime: 60_000,
+  });
+  const hasPeakBadge = !!peak?.peakReachedAt;
+
+  // First-time celebration: persist on server + fire confetti once.
+  useEffect(() => {
+    if (!isMaxed || hasPeakBadge || peak === undefined) return;
+    let cancelled = false;
+    markPeak()
+      .then((res) => {
+        if (cancelled) return;
+        qc.setQueryData(["peak-status"], { peakReachedAt: res.peakReachedAt });
+        if (res.firstTime) fireConfetti();
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isMaxed, hasPeakBadge, peak, markPeak, qc]);
 
   // SVG arc
   const size = 168;
@@ -57,7 +87,10 @@ export function MomentumHero({ tracks }: { tracks: TrackLike[] }) {
         <div className="flex items-center gap-5 relative">
           <div className="relative shrink-0" style={{ width: size, height: size }}>
             {/* Evolution ring */}
-            <div className={`absolute inset-0 rounded-full ${evo.ringClass}`} style={{ padding: 3 }}>
+            <div
+              className={`absolute inset-0 rounded-full ${isMaxed ? "peak-ring" : evo.ringClass}`}
+              style={{ padding: 3 }}
+            >
               <div className="h-full w-full rounded-full bg-card" />
             </div>
             {/* Progress arc */}
@@ -65,7 +98,7 @@ export function MomentumHero({ tracks }: { tracks: TrackLike[] }) {
               <circle cx={size/2} cy={size/2} r={r} stroke="oklch(0.92 0 0)" strokeWidth={stroke} fill="none" />
               <motion.circle
                 cx={size/2} cy={size/2} r={r}
-                stroke="oklch(0.18 0 0)"
+                stroke={isMaxed ? "oklch(0.78 0.20 70)" : "oklch(0.18 0 0)"}
                 strokeWidth={stroke}
                 strokeLinecap="round"
                 fill="none"
@@ -83,15 +116,44 @@ export function MomentumHero({ tracks }: { tracks: TrackLike[] }) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.2em] mb-2">
-              <Sparkles className="h-3 w-3" /> {evo.label}
+            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+              {isMaxed ? (
+                <span className="peak-badge inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.2em] font-bold">
+                  <Crown className="h-3 w-3" /> Maxed
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.2em]">
+                  <Sparkles className="h-3 w-3" /> {evo.label}
+                </span>
+              )}
+              {hasPeakBadge && !isMaxed && (
+                <span
+                  className="peak-badge inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-mono uppercase tracking-[0.2em] font-bold"
+                  title={`Peak reached ${new Date(peak!.peakReachedAt!).toLocaleDateString()}`}
+                >
+                  <Crown className="h-2.5 w-2.5" /> 1000 Club
+                </span>
+              )}
             </div>
             <h2 className="font-display text-2xl leading-tight tracking-tight">
-              {m.score >= 700 ? "You're on fire." : m.score >= 400 ? "Momentum is building." : m.score >= 150 ? "You've started. Don't stop." : "Today is day one."}
+              {isMaxed
+                ? "Peak momentum. Hold the line."
+                : m.score >= 700
+                  ? "You're on fire."
+                  : m.score >= 400
+                    ? "Momentum is building."
+                    : m.score >= 150
+                      ? "You've started. Don't stop."
+                      : "Today is day one."}
             </h2>
-            {evo.next && (
+            {!isMaxed && evo.next && (
               <p className="mt-2 text-xs text-muted-foreground">
                 <span className="num font-semibold text-foreground">{evo.daysToNext}</span> day{evo.daysToNext === 1 ? "" : "s"} to <span className="font-semibold text-foreground">{evolutionFor(evo.next).label}</span>
+              </p>
+            )}
+            {isMaxed && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Every component maxed. Don't break a single thread.
               </p>
             )}
             <div className="mt-3 grid grid-cols-4 gap-1.5">
