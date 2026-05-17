@@ -513,49 +513,50 @@ export const createCommunityPost = createServerFn({ method: "POST" })
     content: z.string().min(10).max(280),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    // Resolve day_number from user's current streak on this track
-    let dayNumber = 0;
+    // Resolve real current day number from journey progress (same logic as getJourney).
+    let dayNumber = 1;
     const { data: cat } = await context.supabase
       .from("tracks_catalog").select("id").eq("slug", data.trackSlug).single();
     if (cat) {
       const { data: ut } = await context.supabase
-        .from("user_tracks").select("current_streak")
+        .from("user_tracks").select("id")
         .eq("user_id", context.userId).eq("track_id", cat.id).maybeSingle();
-      dayNumber = ut?.current_streak ?? 0;
-    }
-
-    // Claude AI moderation
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    let approved = true;
-    if (apiKey) {
-      try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 100,
-            system: "You are a content moderator for a self-improvement community. The user is sharing a reflection about their personal growth journey. Reject any content that contains: sexual references, vulgar language, offensive content, spam, content unrelated to personal growth or the specific track topic, or anything not suitable for a family-friendly environment. Respond ONLY with JSON: {\"approved\": true/false, \"reason\": \"short reason if rejected\"}",
-            messages: [{ role: "user", content: data.content }],
-          }),
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const text: string = json.content?.[0]?.text ?? "{}";
-          let parsed: any;
-          try { parsed = JSON.parse(text); } catch { parsed = { approved: true }; }
-          approved = Boolean(parsed?.approved ?? true);
+      if (ut) {
+        const { data: jr } = await context.supabase
+          .from("journeys").select("id,total_days")
+          .eq("user_track_id", ut.id).maybeSingle();
+        if (jr) {
+          const { data: jdays } = await context.supabase
+            .from("journey_days").select("completed_at")
+            .eq("journey_id", jr.id);
+          const completedCount = (jdays ?? []).filter((d: any) => d.completed_at).length;
+          dayNumber = Math.min(jr.total_days, completedCount + 1);
         }
-      } catch {
-        approved = true; // fail-open on network errors
       }
     }
 
-    if (!approved) return { approved: false };
+    // Mandatory AI moderation via edge function. Fail-closed on any error.
+    let approved = false;
+    let rejectionReason: string | null = null;
+    try {
+      const { data: modData, error: modError } = await context.supabase.functions.invoke(
+        "moderate-post",
+        { body: { content: data.content, trackSlug: data.trackSlug } },
+      );
+      if (modError || !modData || typeof modData.approved !== "boolean") {
+        console.error("moderate-post failed:", modError, modData);
+        return { approved: false, reason: "Community temporarily unavailable" };
+      }
+      approved = modData.approved;
+      rejectionReason = modData.reason ?? null;
+    } catch (e) {
+      console.error("moderate-post threw:", e);
+      return { approved: false, reason: "Community temporarily unavailable" };
+    }
+
+    if (!approved) {
+      return { approved: false, reason: rejectionReason ?? "Post not allowed" };
+    }
 
     const { error } = await context.supabase.from("community_posts").insert({
       track_slug: data.trackSlug,
