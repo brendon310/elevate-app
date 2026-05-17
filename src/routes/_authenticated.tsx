@@ -1,5 +1,8 @@
 import { createFileRoute, Outlet, useNavigate, Link, useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { activateTracks } from "@/lib/elevate.functions";
 import { Home, Layers, BarChart3, Settings, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -9,7 +12,41 @@ function Layout() {
   const { user, loading, signOut } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
+  const activate = useServerFn(activateTracks);
+  const qc = useQueryClient();
+  const draining = useRef(false);
   useEffect(() => { if (!loading && !user) nav({ to: "/login" }); }, [user, loading, nav]);
+
+  // Drain pending pre-auth onboarding (from /begin) once signed in.
+  useEffect(() => {
+    if (!user || draining.current) return;
+    let raw: string | null = null;
+    try { raw = localStorage.getItem("pending_onboarding"); } catch {}
+    if (!raw) return;
+    draining.current = true;
+    let p: any;
+    try { p = JSON.parse(raw); } catch { localStorage.removeItem("pending_onboarding"); return; }
+    if (!p?.trackId || !p?.slug) { localStorage.removeItem("pending_onboarding"); return; }
+    (async () => {
+      try {
+        await activate({ data: {
+          trackIds: [p.trackId],
+          contract: {
+            answer: p.answer,
+            identity: p.name ? `${p.name} — committed to ${p.trackName}` : undefined,
+            commitment: `I, ${p.name}, commit to ${p.trackName}. Starting today. One day at a time.`,
+            signed_at: p.signed_at,
+          },
+        } });
+        localStorage.removeItem("pending_onboarding");
+        await qc.invalidateQueries({ queryKey: ["userTracks"] });
+        nav({ to: "/track/$slug", params: { slug: p.slug } });
+      } catch {
+        localStorage.removeItem("pending_onboarding");
+      }
+    })();
+  }, [user, activate, nav, qc]);
+
   if (loading || !user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
 
   const navItems = [
