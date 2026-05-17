@@ -43,7 +43,7 @@ function ArcRing({ value, hueVar, size = 84 }: { value: number; hueVar: string; 
 }
 
 function SkeletonCard() {
-  return <div className="snap-start shrink-0 w-[260px] h-[340px] rounded-[2rem] bg-muted animate-pulse" />;
+  return <div className="snap-start shrink-0 w-[260px] h-[340px] rounded-[20px] bg-muted animate-pulse" />;
 }
 
 function SkeletonRow() {
@@ -127,7 +127,7 @@ function Dashboard() {
               <motion.div key={ut.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 + i * 0.05, type: "spring", stiffness: 90, damping: 16 }}>
                 <Link to="/track/$slug" params={{ slug: ut.track.slug }}
-                  className="snap-start block w-[260px] h-[340px] rounded-[2rem] p-5 relative overflow-hidden btn-chunk depth-card"
+                  className="snap-start block w-[260px] h-[340px] rounded-[20px] p-5 relative overflow-hidden btn-chunk"
                   style={{
                     background: grad,
                     boxShadow: `0 24px 50px -16px color-mix(in oklab, var(${hueVar}) 55%, transparent), 0 4px 14px -4px color-mix(in oklab, var(${hueVar}) 35%, transparent)`,
@@ -170,7 +170,7 @@ function Dashboard() {
           {/* Add new card */}
           {!isLoading && (
             <Link to="/tracks"
-              className="snap-start flex flex-col items-center justify-center w-[200px] h-[340px] rounded-[2rem] border-2 border-dashed border-[color:var(--primary)]/40 text-muted-foreground hover:border-[color:var(--primary)] hover:text-foreground transition btn-chunk">
+              className="snap-start flex flex-col items-center justify-center w-[200px] h-[340px] rounded-[20px] border-2 border-dashed border-[color:var(--primary)]/40 text-muted-foreground hover:border-[color:var(--primary)] hover:text-foreground transition btn-chunk">
               <Plus className="h-8 w-8 mb-2"/>
               <span className="text-sm font-medium">New path</span>
             </Link>
