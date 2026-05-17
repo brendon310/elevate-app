@@ -504,7 +504,7 @@ function JourneyView({ slug, data }: any) {
                 <X className="h-4 w-4"/>
               </button>
             </div>
-            <p className="text-sm text-muted-foreground mt-3">{openDay.description}</p>
+            <p className="text-sm text-muted-foreground pt-6">{openDay.description}</p>
             <div className="mt-4 space-y-3 pb-6">
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Task</p><p className="text-sm">{openDay.task}</p></div>
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Reflection</p><p className="text-sm">{openDay.reflection}</p></div>
