@@ -28,7 +28,7 @@ function Layout() {
         </Link>
         <nav className="flex-1 space-y-1">
           {navItems.map(({to,icon:Icon,label}) => {
-            const active = loc.pathname === to || (to === "/app" && loc.pathname === "/app");
+            const active = loc.pathname === to;
             return (
               <Link key={to} to={to} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${active?"bg-accent text-foreground":"text-muted-foreground hover:text-foreground hover:bg-accent/50"}`}>
                 <Icon className="h-4 w-4" />{label}
