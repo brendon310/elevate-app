@@ -383,7 +383,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      toggle_community_flame: {
+        Args: { _post_id: string }
+        Returns: {
+          flame_count: number
+          flamed: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
