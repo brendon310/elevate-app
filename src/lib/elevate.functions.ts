@@ -17,27 +17,16 @@ export const suggestTrack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ answer: z.string().min(3).max(800) }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("AI is not configured");
     const { data: catalog } = await context.supabase
       .from("tracks_catalog").select("slug,name,category,short_description").order("sort_order");
     const list = (catalog ?? []).map(t => `${t.slug} :: ${t.name} (${t.category}) — ${t.short_description}`).join("\n");
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: `You are a wise, warm life coach. The user just answered: "What is the one thing that, if you changed it, would change everything?". Pick the SINGLE most fitting track for them from this catalog. Respond with strict JSON: {"slug": string, "reason": string (1-2 warm sentences referencing what they said), "identity": string (5-9 words: "You are becoming someone who...")}. Catalog:\n${list}` },
-          { role: "user", content: data.answer },
-        ],
-      }),
-    });
-    if (!res.ok) throw new Error(`AI ${res.status}`);
-    const json = await res.json();
-    const txt: string = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: any; try { parsed = JSON.parse(txt); } catch { parsed = JSON.parse(txt.replace(/^```json\s*|```$/g,"")); }
+    const parsed = await anthropicJSON(
+      key,
+      `You are a wise, warm life coach. The user just answered: "What is the one thing that, if you changed it, would change everything?". Pick the SINGLE most fitting track for them from this catalog. Respond ONLY with JSON: {"slug": string, "reason": string (1-2 warm sentences referencing what they said), "identity": string (5-9 words: "You are becoming someone who...")}. Catalog:\n${list}`,
+      data.answer,
+    );
     const match = (catalog ?? []).find(t => t.slug === parsed.slug) ?? catalog?.[0];
     return { track: match, reason: parsed.reason ?? "", identity: parsed.identity ?? "" };
   });
@@ -157,7 +146,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     content: z.string().min(1).max(4000),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("AI is not configured");
 
     const { data: ut } = await context.supabase
@@ -173,23 +162,12 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       user_id: context.userId, user_track_id: data.userTrackId, role: "user", content: data.content,
     });
 
-    const messages = [
-      { role: "system", content: withArchetype(ut.track.slug, ut.track.ai_system_prompt) + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.${(() => { const c: any = (ut.intake as any)?.contract; return c?.answer ? `\n\nThe user's transformation contract said: "${c.answer}". Identity: "${c.identity ?? ""}". Reference it gently when meaningful.` : ""; })()}` },
-      ...(history ?? []).map((m: any) => ({ role: m.role, content: m.content })),
-      { role: "user", content: data.content },
+    const systemPrompt = withArchetype(ut.track.slug, ut.track.ai_system_prompt) + `\n\nUser's current streak: ${ut.current_streak} days. Longest: ${ut.longest_streak}.${(() => { const c: any = (ut.intake as any)?.contract; return c?.answer ? `\n\nThe user's transformation contract said: "${c.answer}". Identity: "${c.identity ?? ""}". Reference it gently when meaningful.` : ""; })()}`;
+    const chatMessages = [
+      ...(history ?? []).map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content as string })),
+      { role: "user" as const, content: data.content },
     ];
-
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages }),
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`AI error ${res.status}: ${t.slice(0, 200)}`);
-    }
-    const json = await res.json();
-    const reply: string = json.choices?.[0]?.message?.content ?? "…";
+    const reply = await anthropicText(key, systemPrompt, chatMessages, "claude-sonnet-4-6", 1024);
 
     await context.supabase.from("track_messages").insert({
       user_id: context.userId, user_track_id: data.userTrackId, role: "assistant", content: reply,
@@ -201,7 +179,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
 export const generateWeeklyInsight = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("AI is not configured");
 
     const { data: tracks } = await context.supabase
@@ -215,19 +193,13 @@ export const generateWeeklyInsight = createServerFn({ method: "POST" })
       .eq("user_id", context.userId).gte("log_date", sinceISO);
 
     const summary = `Tracks: ${JSON.stringify(tracks)}\nLast 7 days logs: ${JSON.stringify(logs)}`;
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: "You are the Elevate weekly insight coach — warm, sharp, specific. Output MARKDOWN with EXACTLY these three H3 sections in order, no preamble, no closing:\n\n### Strongest\n2–3 sentences naming the most consistent behavior, with a number (streak/days). Reference the track by name.\n\n### Struggled\n2–3 sentences naming the weakest pattern honestly. No shame. Use concrete observations.\n\n### Try this week\nA short intro sentence, then 3 bullet points starting with '- '. Each bullet = one concrete, specific micro-action for the coming week tied to their data.\n\nRules: under 220 words total. Use **bold** for emphasis on key words. Never use emojis. Never invent data not present." },
-          { role: "user", content: summary },
-        ],
-      }),
-    });
-    const json = await res.json();
-    const content: string = json.choices?.[0]?.message?.content ?? "No data yet.";
+    const content = await anthropicText(
+      key,
+      "You are the Elevate weekly insight coach — warm, sharp, specific. Output MARKDOWN with EXACTLY these three H3 sections in order, no preamble, no closing:\n\n### Strongest\n2–3 sentences naming the most consistent behavior, with a number (streak/days). Reference the track by name.\n\n### Struggled\n2–3 sentences naming the weakest pattern honestly. No shame. Use concrete observations.\n\n### Try this week\nA short intro sentence, then 3 bullet points starting with '- '. Each bullet = one concrete, specific micro-action for the coming week tied to their data.\n\nRules: under 220 words total. Use **bold** for emphasis on key words. Never use emojis. Never invent data not present.",
+      [{ role: "user", content: summary }],
+      "claude-sonnet-4-6",
+      512,
+    );
     await context.supabase.from("insights").upsert(
       { user_id: context.userId, week_start: weekStart, content },
       { onConflict: "user_id,week_start" }
@@ -350,23 +322,41 @@ export const getInsightsData = createServerFn({ method: "GET" })
 const CHUNK_SIZE = 10;
 const MILESTONES = [1, 3, 7, 14, 21, 30, 60, 90, 180, 365];
 
-async function aiJSON(key: string, system: string, user: string): Promise<any> {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const anthropicHeaders = (key: string) => ({
+  "x-api-key": key,
+  "anthropic-version": "2023-06-01",
+  "content-type": "application/json",
+});
+
+async function anthropicJSON(
+  key: string, system: string, user: string,
+  model = "claude-haiku-4-5-20251001", maxTokens = 1024,
+): Promise<any> {
+  const res = await fetch(ANTHROPIC_URL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_object" },
-    }),
+    headers: anthropicHeaders(key),
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
   });
-  if (!res.ok) throw new Error(`AI ${res.status}: ${(await res.text()).slice(0,200)}`);
-  const json = await res.json();
-  const txt: string = json.choices?.[0]?.message?.content ?? "{}";
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const j = await res.json();
+  const txt: string = j.content?.[0]?.text ?? "{}";
   try { return JSON.parse(txt); } catch { return JSON.parse(txt.replace(/^```json\s*|```$/g, "")); }
+}
+
+async function anthropicText(
+  key: string, system: string,
+  messages: { role: "user" | "assistant"; content: string }[],
+  model = "claude-sonnet-4-6", maxTokens = 1024,
+): Promise<string> {
+  const res = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: anthropicHeaders(key),
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages }),
+  });
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const j = await res.json();
+  return j.content?.[0]?.text ?? "";
 }
 
 async function generateDaysChunk(opts: {
@@ -393,7 +383,7 @@ Rules:
 - Increase complexity and depth as day_number rises.
 - Reference the user's obstacle when relevant.
 - Tone: warm, expert, never preachy. No emojis.`;
-  const out = await aiJSON(opts.key, system, `Generate days ${opts.fromDay}-${opts.toDay} as JSON.`);
+  const out = await anthropicJSON(opts.key, system, `Generate days ${opts.fromDay}-${opts.toDay} as JSON.`, "claude-sonnet-4-6", 4096);
   const days: any[] = Array.isArray(out?.days) ? out.days : [];
   return days.filter(d => d && typeof d.day_number === "number" && d.day_number >= opts.fromDay && d.day_number <= opts.toDay);
 }
@@ -408,7 +398,7 @@ export const startJourney = createServerFn({ method: "POST" })
     obstacle: z.string().max(400).default(""),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("AI is not configured");
 
     // Ensure user_track
@@ -465,7 +455,7 @@ export const ensureDaysGenerated = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ journeyId: z.string().uuid(), throughDay: z.number().int().min(1).max(365) }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error("AI is not configured");
     const { data: jr } = await context.supabase.from("journeys").select("*").eq("id", data.journeyId).eq("user_id", context.userId).single();
     if (!jr) throw new Error("Journey not found");
@@ -557,34 +547,29 @@ export const getReEntryMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ slug: z.string(), missedDays: z.number().int().min(1).max(60) }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) return { message: "You missed some days. That's part of every real journey. The only failure is not coming back. Start with one small action today." };
     const { data: cat } = await context.supabase.from("tracks_catalog").select("name,ai_system_prompt").eq("slug", data.slug).single();
     if (!cat) throw new Error("Track not found");
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: cat.ai_system_prompt + "\n\nWrite a 3-4 sentence re-entry message: no shame, normalize the gap, give one concrete tiny re-entry action specific to this track." },
-          { role: "user", content: `The user missed ${data.missedDays} day(s) on the "${cat.name}" track. Write the re-entry message.` },
-        ],
-      }),
-    });
-    const json = await res.json();
-    return { message: json.choices?.[0]?.message?.content ?? "Welcome back. One small step today." };
+    const message = await anthropicText(
+      key,
+      cat.ai_system_prompt + "\n\nWrite a 3-4 sentence re-entry message: no shame, normalize the gap, give one concrete tiny re-entry action specific to this track.",
+      [{ role: "user", content: `The user missed ${data.missedDays} day(s) on the "${cat.name}" track. Write the re-entry message.` }],
+      "claude-haiku-4-5-20251001",
+      256,
+    );
+    return { message: message || "Welcome back. One small step today." };
   });
 
 export const getMilestoneMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ slug: z.string(), dayNumber: z.number().int().min(1).max(365) }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     const { data: cat } = await context.supabase.from("tracks_catalog").select("name,ai_system_prompt").eq("slug", data.slug).single();
     if (!cat) throw new Error("Track not found");
     if (!key) return { message: `Day ${data.dayNumber} reached.`, science: "" };
-    const out = await aiJSON(key, cat.ai_system_prompt + "\n\nReturn strict JSON: { message: string (2-3 sentences celebrating the milestone, warm and specific), science: string (1-2 sentences of what happens in the brain/body at this point) }", `Milestone day ${data.dayNumber} on "${cat.name}".`);
+    const out = await anthropicJSON(key, cat.ai_system_prompt + "\n\nReturn ONLY a JSON object: { \"message\": string (2-3 sentences celebrating the milestone, warm and specific), \"science\": string (1-2 sentences of what happens in the brain/body at this point) }", `Milestone day ${data.dayNumber} on "${cat.name}".`);
     return { message: String(out.message ?? ""), science: String(out.science ?? "") };
   });
 
@@ -715,29 +700,19 @@ export const validateCheckin = createServerFn({ method: "POST" })
     if (trimmed.length < 8) {
       return { valid: false, reason: "Too short to be a real reflection." };
     }
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY;
     if (!key) return { valid: true, reason: "" };
     const { data: cat } = await context.supabase
       .from("tracks_catalog").select("name").eq("slug", data.slug).single();
     const trackName = cat?.name ?? data.slug;
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: "You are a strict but funny check-in validator for a self-improvement app. The user is on a specific journey (provided in context). Evaluate if their response is genuine, relevant, and meaningful. A real response mentions specific situations, feelings, thoughts, or experiences related to their journey. Respond ONLY with a JSON object: {valid: true/false, reason: 'one short sentence explaining why if invalid'}. Be strict — vague one-word answers, random text, jokes, and nonsense are invalid. A genuine 2-3 sentence personal reflection is valid." },
-            { role: "user", content: `Track: ${trackName}\nDay: ${data.dayNumber}\n\nUser response:\n"""${trimmed}"""` },
-          ],
-        }),
-      });
-      if (!res.ok) return { valid: true, reason: "" }; // fail-open
-      const json = await res.json();
-      const txt: string = json.choices?.[0]?.message?.content ?? "{}";
-      let parsed: any;
-      try { parsed = JSON.parse(txt); } catch { parsed = JSON.parse(txt.replace(/^```json\s*|```$/g, "")); }
+      const parsed = await anthropicJSON(
+        key,
+        "You are a strict but funny check-in validator for a self-improvement app. The user is on a specific journey (provided in context). Evaluate if their response is genuine, relevant, and meaningful. A real response mentions specific situations, feelings, thoughts, or experiences related to their journey. Respond ONLY with a JSON object: {\"valid\": true/false, \"reason\": \"one short sentence explaining why if invalid\"}. Be strict — vague one-word answers, random text, jokes, and nonsense are invalid. A genuine 2-3 sentence personal reflection is valid.",
+        `Track: ${trackName}\nDay: ${data.dayNumber}\n\nUser response:\n"""${trimmed}"""`,
+        "claude-haiku-4-5-20251001",
+        128,
+      );
       return { valid: Boolean(parsed?.valid), reason: String(parsed?.reason ?? "") };
     } catch {
       return { valid: true, reason: "" }; // fail-open on network errors
