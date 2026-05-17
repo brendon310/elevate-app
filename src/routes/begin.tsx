@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
-import { getPublicCatalog, getCoachResponse } from "@/lib/onboarding.functions";
+import { checkEnvHealth, getPublicCatalog, getCoachResponse } from "@/lib/onboarding.functions";
 import { trackHueGradient, trackHueVar } from "@/lib/categories";
 
 export const Route = createFileRoute("/begin")({ component: BeginFlow });
