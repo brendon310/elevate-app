@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_post_flames: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_flames_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          content: string
+          created_at: string
+          day_number: number
+          flame_count: number
+          id: string
+          track_slug: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          day_number?: number
+          flame_count?: number
+          id?: string
+          track_slug: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          day_number?: number
+          flame_count?: number
+          id?: string
+          track_slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       insights: {
         Row: {
           content: string
