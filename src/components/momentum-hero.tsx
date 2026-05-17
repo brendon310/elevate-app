@@ -32,6 +32,26 @@ function useCountUp(target: number, duration = 900) {
   return v;
 }
 
+function fireConfetti() {
+  const gold = ["#FFD000", "#FFB347", "#FFE680", "#F5C518", "#FFFFFF"];
+  const burst = (originX: number) =>
+    confetti({
+      particleCount: 90,
+      spread: 75,
+      startVelocity: 45,
+      gravity: 0.9,
+      ticks: 220,
+      origin: { x: originX, y: 0.35 },
+      colors: gold,
+      scalar: 1.05,
+    });
+  burst(0.25);
+  setTimeout(() => burst(0.75), 180);
+  setTimeout(() =>
+    confetti({ particleCount: 140, spread: 120, startVelocity: 35, origin: { x: 0.5, y: 0.4 }, colors: gold }),
+  360);
+}
+
 export function MomentumHero({ tracks }: { tracks: TrackLike[] }) {
   const m = computeMomentum(tracks);
   const evo = evolutionFor(maxStreak(tracks));
