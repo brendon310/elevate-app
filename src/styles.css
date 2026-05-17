@@ -354,4 +354,15 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .num-rise { animation: num-rise 0.8s cubic-bezier(0.2,0.9,0.2,1) both; }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-6px); }
+    30% { transform: translateX(5px); }
+    45% { transform: translateX(-4px); }
+    60% { transform: translateX(3px); }
+    75% { transform: translateX(-2px); }
+    90% { transform: translateX(1px); }
+  }
+  .shake { animation: shake 0.5s ease-in-out both; }
 }
