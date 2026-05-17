@@ -220,7 +220,7 @@ export const generateWeeklyInsight = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are the Elevate weekly insight coach. Output 3 short sections in markdown: **Strongest**, **Struggled**, **Try this week**. Be concrete and warm. <200 words." },
+          { role: "system", content: "You are the Elevate weekly insight coach — warm, sharp, specific. Output MARKDOWN with EXACTLY these three H3 sections in order, no preamble, no closing:\n\n### Strongest\n2–3 sentences naming the most consistent behavior, with a number (streak/days). Reference the track by name.\n\n### Struggled\n2–3 sentences naming the weakest pattern honestly. No shame. Use concrete observations.\n\n### Try this week\nA short intro sentence, then 3 bullet points starting with '- '. Each bullet = one concrete, specific micro-action for the coming week tied to their data.\n\nRules: under 220 words total. Use **bold** for emphasis on key words. Never use emojis. Never invent data not present." },
           { role: "user", content: summary },
         ],
       }),
@@ -232,6 +232,115 @@ export const generateWeeklyInsight = createServerFn({ method: "POST" })
       { onConflict: "user_id,week_start" }
     );
     return { content, weekStart };
+  });
+
+export const getInsightsData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const today = new Date();
+    const todayISO = today.toISOString().slice(0, 10);
+    const since90 = new Date(Date.now() - 89 * 86400000).toISOString().slice(0, 10);
+
+    const [{ data: tracks }, { data: logs }, { data: latestInsight }] = await Promise.all([
+      context.supabase
+        .from("user_tracks")
+        .select("id,current_streak,longest_streak,started_at,last_log_date,track:tracks_catalog(name,slug,category,color,icon)")
+        .eq("user_id", context.userId),
+      context.supabase
+        .from("track_logs")
+        .select("log_date,completed,user_track_id")
+        .eq("user_id", context.userId)
+        .gte("log_date", since90),
+      context.supabase
+        .from("insights")
+        .select("content,week_start,created_at")
+        .eq("user_id", context.userId)
+        .order("week_start", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const trackList = tracks ?? [];
+    const logList = (logs ?? []).filter((l: any) => l.completed);
+
+    // Heatmap: counts per day, last 90 days
+    const byDay = new Map<string, number>();
+    for (const l of logList) byDay.set(l.log_date, (byDay.get(l.log_date) ?? 0) + 1);
+    const heatmap: { date: string; count: number }[] = [];
+    for (let i = 89; i >= 0; i--) {
+      const d = new Date(today.getTime() - i * 86400000).toISOString().slice(0, 10);
+      heatmap.push({ date: d, count: byDay.get(d) ?? 0 });
+    }
+
+    // Momentum trend: daily completion ratio over last 30 days × 1000
+    const totalTracks = Math.max(1, trackList.length);
+    const momentum30 = heatmap.slice(-30).map((h) => ({
+      date: h.date,
+      score: Math.round((Math.min(h.count, totalTracks) / totalTracks) * 1000),
+    }));
+
+    // Per-track stats: streak, longest, total completed, completion rate since started
+    const perTrack = trackList.map((t: any) => {
+      const trackLogs = logList.filter((l: any) => l.user_track_id === t.id);
+      const totalDone = trackLogs.length;
+      const startedAt = t.started_at ? new Date(t.started_at) : today;
+      const daysSinceStart = Math.max(1, Math.round((today.getTime() - startedAt.getTime()) / 86400000) + 1);
+      const completionRate = Math.min(100, Math.round((totalDone / daysSinceStart) * 100));
+      return {
+        id: t.id,
+        name: t.track?.name ?? "Track",
+        slug: t.track?.slug ?? "",
+        category: t.track?.category ?? "",
+        color: t.track?.color ?? "",
+        icon: t.track?.icon ?? "",
+        currentStreak: t.current_streak ?? 0,
+        longestStreak: t.longest_streak ?? 0,
+        totalDone,
+        completionRate,
+      };
+    });
+
+    // This week vs last week (Sun-anchored)
+    const dow = today.getDay();
+    const thisWeekStart = new Date(today.getTime() - dow * 86400000);
+    const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * 86400000);
+    const inRange = (iso: string, start: Date, end: Date) => {
+      const t = new Date(iso).getTime();
+      return t >= start.getTime() && t < end.getTime();
+    };
+    const thisWeekDone = logList.filter((l: any) => inRange(l.log_date, thisWeekStart, new Date(thisWeekStart.getTime() + 7 * 86400000))).length;
+    const lastWeekDone = logList.filter((l: any) => inRange(l.log_date, lastWeekStart, thisWeekStart)).length;
+    const possible = trackList.length * 7;
+    const thisConsistency = possible ? Math.round((thisWeekDone / possible) * 100) : 0;
+    const lastConsistency = possible ? Math.round((lastWeekDone / possible) * 100) : 0;
+
+    const sumScore = (slice: { score: number }[]) =>
+      slice.length ? Math.round(slice.reduce((s, x) => s + x.score, 0) / slice.length) : 0;
+    const thisMomentum = sumScore(momentum30.slice(-7));
+    const lastMomentum = sumScore(momentum30.slice(-14, -7));
+
+    const weekStartISO = thisWeekStart.toISOString().slice(0, 10);
+    const cachedInsight =
+      latestInsight && latestInsight.week_start === weekStartISO
+        ? { content: latestInsight.content as string, weekStart: latestInsight.week_start as string }
+        : null;
+
+    return {
+      todayISO,
+      heatmap,
+      momentum30,
+      perTrack,
+      compare: {
+        thisWeekDone,
+        lastWeekDone,
+        thisConsistency,
+        lastConsistency,
+        thisMomentum,
+        lastMomentum,
+      },
+      cachedInsight,
+      hasData: logList.length > 0,
+    };
   });
 
 // ============================================================
