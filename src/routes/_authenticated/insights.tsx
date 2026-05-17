@@ -67,8 +67,6 @@ function Insights() {
           <ReportSection
             content={data.cachedInsight?.content ?? gen.data?.content ?? ""}
             loading={gen.isPending || (!data.cachedInsight && !gen.data && data.hasData)}
-            onRegenerate={() => gen.mutate()}
-            regenerating={gen.isPending}
           />
         </>
       )}
@@ -233,27 +231,13 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 function ReportSection({
   content,
   loading,
-  onRegenerate,
-  regenerating,
 }: {
   content: string;
   loading: boolean;
-  onRegenerate: () => void;
-  regenerating: boolean;
 }) {
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold">This week's letter</h2>
-        <button
-          onClick={onRegenerate}
-          disabled={regenerating}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full border border-border bg-card px-3 py-1.5 hover:bg-muted disabled:opacity-50"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {regenerating ? "Writing…" : content ? "Regenerate" : "Generate"}
-        </button>
-      </div>
+      <h2 className="font-semibold mb-3">Today's letter</h2>
       {loading && !content ? (
         <div className="rounded-2xl border border-border bg-card p-6 space-y-3">
           <div className="h-4 w-32 bg-muted rounded animate-pulse" />

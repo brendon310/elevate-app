@@ -207,7 +207,8 @@ export const generateWeeklyInsight = createServerFn({ method: "POST" })
     const { data: tracks } = await context.supabase
       .from("user_tracks").select("current_streak,longest_streak,track:tracks_catalog(name,category)")
       .eq("user_id", context.userId);
-    const weekStart = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0,10); })();
+    // Cache key is the current date — refreshes automatically the next day.
+    const weekStart = new Date().toISOString().slice(0, 10);
     const sinceISO = new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10);
     const { data: logs } = await context.supabase
       .from("track_logs").select("log_date,completed,mood,note,user_track:user_tracks(track:tracks_catalog(name))")
@@ -319,9 +320,8 @@ export const getInsightsData = createServerFn({ method: "GET" })
     const thisMomentum = sumScore(momentum30.slice(-7));
     const lastMomentum = sumScore(momentum30.slice(-14, -7));
 
-    const weekStartISO = thisWeekStart.toISOString().slice(0, 10);
     const cachedInsight =
-      latestInsight && latestInsight.week_start === weekStartISO
+      latestInsight && latestInsight.week_start === todayISO
         ? { content: latestInsight.content as string, weekStart: latestInsight.week_start as string }
         : null;
 
