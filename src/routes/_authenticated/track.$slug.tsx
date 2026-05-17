@@ -169,10 +169,23 @@ function JourneyView({ slug, data }: any) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const WARNINGS = [
+    "Hey… the task won't complete itself 👀",
+    "Day 0 is calling. Don't pick up. 📵",
+    "Your future self is watching. Fill this in. 👁️",
+    "The coach knows when you're faking it. 😑",
+    "Empty field = empty progress. Come on. 💪",
+    "You didn't come this far to leave this blank. ✍️",
+    "This is the work. Do the work. 🔥",
+    "Skip this and your streak cries tonight. 😢",
+    "Not even one sentence? Really? 🤨",
+    "The only bad answer is no answer. Go.",
+  ];
+
   const complete = useMutation({
     mutationFn: (dayId: string) => completeFn({ data: { dayId, note: note.trim() || undefined } }),
     onSuccess: async (r: any) => {
-      setNote(""); setOpenDay(null);
+      setNote(""); setOpenDay(null); setValidationError(null);
       setBurst(true); setTimeout(()=>setBurst(false), 1200);
       qc.invalidateQueries({ queryKey: ["journey", slug] });
       qc.invalidateQueries({ queryKey: ["userTracks"] });
