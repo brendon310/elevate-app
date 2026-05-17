@@ -417,13 +417,13 @@ function JourneyView({ slug, data }: any) {
                   <span className={`absolute -left-[18px] top-1/2 -translate-y-1/2 h-3 w-3 rounded-full ${d?.completed_at ? "bg-primary" : isToday ? "bg-primary ring-4 ring-primary/20" : "bg-border"}`}/>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Day {dayNum}</span>
-                      {isMilestone && <Trophy className="h-3 w-3 text-primary"/>}
-                      {isLocked && <Lock className="h-3 w-3 text-muted-foreground"/>}
+                      <span className={`text-[11px] uppercase tracking-widest ${isToday ? "text-white/80" : "text-muted-foreground"}`}>Day {dayNum}</span>
+                      {isMilestone && <Trophy className={`h-3 w-3 ${isToday ? "text-white" : "text-primary"}`}/>}
+                      {isLocked && <Lock className={`h-3 w-3 ${isToday ? "text-white/80" : "text-muted-foreground"}`}/>}
                     </div>
-                    <p className="text-sm font-medium truncate">{d?.title ?? "Coming soon"}</p>
+                    <p className={`text-sm font-medium truncate ${isToday ? "text-white" : ""}`}>{d?.title ?? "Coming soon"}</p>
                   </div>
-                  {d?.completed_at && <Check className="h-4 w-4 text-primary shrink-0"/>}
+                  {d?.completed_at && <Check className={`h-4 w-4 shrink-0 ${isToday ? "text-white" : "text-primary"}`}/>}
                 </button>
               );
             })}
