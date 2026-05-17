@@ -67,7 +67,11 @@ export function CommunityBoard({
         onComposerClose();
         qc.invalidateQueries({ queryKey: ["community-posts", slug] });
       } else {
-        setRejection(REJECTION_MESSAGES[Math.floor(Math.random() * REJECTION_MESSAGES.length)]);
+        setRejection(
+          res?.reason === "Community temporarily unavailable"
+            ? "Community temporarily unavailable. Please try again in a moment."
+            : REJECTION_MESSAGES[Math.floor(Math.random() * REJECTION_MESSAGES.length)]
+        );
       }
     },
     onError: () => setRejection("Something went wrong. Try again."),
