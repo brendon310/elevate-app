@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { checkContent } from "./profanity-filter";
 import { withArchetype, archetypeForSlug } from "@/lib/coach-archetypes";
 
 export const listCatalog = createServerFn({ method: "GET" })
@@ -535,27 +536,25 @@ export const createCommunityPost = createServerFn({ method: "POST" })
       }
     }
 
-    // Mandatory AI moderation via edge function. Fail-closed on any error.
-    let approved = false;
-    let rejectionReason: string | null = null;
+    // Layer 1: lightweight blocklist filter (server-side authoritative).
+    const basic = checkContent(data.content);
+    if (!basic.ok) {
+      return { approved: false, reason: basic.reason ?? "blocked" };
+    }
+
+    // Layer 2 (optional): Claude moderation as a deeper backstop.
+    // Fail-OPEN on any error — the blocklist already passed and we don't
+    // want every post to break when credits run out.
     try {
       const { data: modData, error: modError } = await context.supabase.functions.invoke(
         "moderate-post",
         { body: { content: data.content, trackSlug: data.trackSlug } },
       );
-      if (modError || !modData || typeof modData.approved !== "boolean") {
-        console.error("moderate-post failed:", modError, modData);
-        return { approved: false, reason: "Community temporarily unavailable" };
+      if (!modError && modData && modData.approved === false) {
+        return { approved: false, reason: modData.reason ?? "blocked" };
       }
-      approved = modData.approved;
-      rejectionReason = modData.reason ?? null;
     } catch (e) {
-      console.error("moderate-post threw:", e);
-      return { approved: false, reason: "Community temporarily unavailable" };
-    }
-
-    if (!approved) {
-      return { approved: false, reason: rejectionReason ?? "Post not allowed" };
+      console.warn("moderate-post fallback skipped:", e);
     }
 
     const { error } = await context.supabase.from("community_posts").insert({

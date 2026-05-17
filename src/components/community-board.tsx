@@ -8,6 +8,7 @@ import {
   createCommunityPost,
   toggleFlame,
 } from "@/lib/elevate.functions";
+import { checkContent, randomRejectionLine } from "@/lib/profanity-filter";
 
 const MAX_CHARS = 280;
 const MIN_CHARS = 10;
@@ -58,7 +59,17 @@ export function CommunityBoard({
   });
 
   const createPost = useMutation({
-    mutationFn: () => createFn({ data: { trackSlug: slug, content: draft.trim() } }),
+    mutationFn: () => {
+      // Client-side pre-check: instant rejection without a round trip.
+      const check = checkContent(draft);
+      if (!check.ok) {
+        return Promise.resolve({
+          approved: false,
+          reason: check.reason === "blocked" ? "blocked" : check.reason,
+        } as any);
+      }
+      return createFn({ data: { trackSlug: slug, content: draft.trim() } });
+    },
     onSuccess: (res: any) => {
       if (res.approved) {
         setDraft("");
@@ -67,10 +78,12 @@ export function CommunityBoard({
         onComposerClose();
         qc.invalidateQueries({ queryKey: ["community-posts", slug] });
       } else {
+        // "blocked" → use one of the funny lines. Anything else → show the reason verbatim.
+        const reason = res?.reason;
         setRejection(
-          res?.reason === "Community temporarily unavailable"
-            ? "Community temporarily unavailable. Please try again in a moment."
-            : REJECTION_MESSAGES[Math.floor(Math.random() * REJECTION_MESSAGES.length)]
+          !reason || reason === "blocked"
+            ? randomRejectionLine()
+            : reason
         );
       }
     },
