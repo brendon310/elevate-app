@@ -488,7 +488,7 @@ function JourneyView({ slug, data }: any) {
           aria-modal="true"
         >
           <div
-            className="bg-card border border-border rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg p-6 max-h-[85dvh] overflow-y-auto overscroll-contain shadow-2xl"
+            className="bg-card border border-border rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg p-6 pb-6 max-h-[85vh] overflow-y-auto overscroll-contain shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 sticky top-0 bg-card -mx-6 px-6 -mt-6 pt-6 pb-3 z-10">
@@ -505,13 +505,20 @@ function JourneyView({ slug, data }: any) {
               </button>
             </div>
             <p className="text-sm text-muted-foreground mt-3">{openDay.description}</p>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3 pb-6">
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Task</p><p className="text-sm">{openDay.task}</p></div>
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Reflection</p><p className="text-sm">{openDay.reflection}</p></div>
               <div className="rounded-xl bg-accent/50 p-3"><p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Science</p><p className="text-sm">{openDay.science}</p></div>
               {openDay.user_note && (
-                <div className="rounded-xl bg-primary p-3"><p className="text-[11px] uppercase tracking-widest text-primary mb-1">Your note</p><p className="text-sm whitespace-pre-wrap">{openDay.user_note}</p></div>
+                <div className="rounded-xl bg-primary p-3"><p className="text-[11px] uppercase tracking-widest text-white/80 mb-1">Your note</p><p className="text-sm whitespace-pre-wrap text-white">{openDay.user_note}</p></div>
               )}
+              <button
+                onClick={() => setOpenDay(null)}
+                className="w-full rounded-xl bg-black text-white font-semibold py-3 mt-2 hover:bg-black/80 transition-colors"
+                style={{ color: "#FFFFFF" }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
