@@ -63,7 +63,7 @@ function BeginFlow() {
       signed_at: new Date().toISOString(),
     };
     try { localStorage.setItem("pending_onboarding", JSON.stringify(payload)); } catch {}
-    nav({ to: "/login", search: { from: "begin" } as any });
+    nav({ to: "/login" });
   };
 
   const grouped = useMemo(() => {
