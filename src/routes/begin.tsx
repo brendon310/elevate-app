@@ -73,7 +73,7 @@ function BeginFlow() {
   }, [catalog]);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-6 py-16 overflow-hidden">
+    <div data-cloud-client="lovable" className="relative min-h-screen flex items-center justify-center px-6 py-16 overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10
         bg-[radial-gradient(60%_60%_at_50%_25%,oklch(0.62_0.215_275_/_0.45),transparent_70%),radial-gradient(45%_55%_at_85%_85%,oklch(0.70_0.215_340_/_0.30),transparent_70%)]" />
 
