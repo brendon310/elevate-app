@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
-import { getPublicCatalog, getCoachResponse } from "@/lib/onboarding.functions";
+import { checkEnvHealth, getPublicCatalog, getCoachResponse } from "@/lib/onboarding.functions";
 import { trackHueGradient, trackHueVar } from "@/lib/categories";
 
 export const Route = createFileRoute("/begin")({ component: BeginFlow });
@@ -71,6 +71,30 @@ function BeginFlow() {
       (acc[t.category] ||= []).push(t); return acc;
     }, {});
   }, [catalog]);
+
+  const healthFn = useServerFn(checkEnvHealth);
+  const { isLoading: healthLoading, isError: healthError, error: healthErr } = useQuery({
+    queryKey: ["env-health"],
+    queryFn: () => healthFn(),
+    retry: false,
+  });
+
+  if (healthLoading || healthError) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center px-6 py-16 overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10
+          bg-[radial-gradient(60%_60%_at_50%_25%,oklch(0.62_0.215_275_/_0.45),transparent_70%),radial-gradient(45%_55%_at_85%_85%,oklch(0.70_0.215_340_/_0.30),transparent_70%)]" />
+        {healthLoading ? (
+          <p className="text-muted-foreground animate-pulse">Checking systems…</p>
+        ) : (
+          <div className="text-center max-w-md">
+            <h1 className="font-display text-2xl mb-2">Unable to start</h1>
+            <p className="text-muted-foreground text-sm">{healthErr?.message ?? "Environment configuration is missing."}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-6 py-16 overflow-hidden">
