@@ -2,6 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
+export const checkEnvHealth = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const missing: string[] = [];
+    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!process.env.SUPABASE_PUBLISHABLE_KEY) missing.push("SUPABASE_PUBLISHABLE_KEY");
+    if (missing.length > 0) {
+      throw new Error(`Missing environment variables: ${missing.join(", ")}`);
+    }
+    return { ok: true };
+  });
+
 export const getPublicCatalog = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data, error } = await supabase
