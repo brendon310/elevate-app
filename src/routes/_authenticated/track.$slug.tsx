@@ -138,6 +138,7 @@ function JourneyView({ slug, data }: any) {
   const [milestone, setMilestone] = useState<{ day: number; message: string; science: string } | null>(null);
   const [reentry, setReentry] = useState<string | null>(null);
   const [burst, setBurst] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Auto-generate next chunk when within 3 days of edge
   useEffect(() => {
@@ -168,10 +169,23 @@ function JourneyView({ slug, data }: any) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const WARNINGS = [
+    "Hey… the task won't complete itself 👀",
+    "Day 0 is calling. Don't pick up. 📵",
+    "Your future self is watching. Fill this in. 👁️",
+    "The coach knows when you're faking it. 😑",
+    "Empty field = empty progress. Come on. 💪",
+    "You didn't come this far to leave this blank. ✍️",
+    "This is the work. Do the work. 🔥",
+    "Skip this and your streak cries tonight. 😢",
+    "Not even one sentence? Really? 🤨",
+    "The only bad answer is no answer. Go.",
+  ];
+
   const complete = useMutation({
     mutationFn: (dayId: string) => completeFn({ data: { dayId, note: note.trim() || undefined } }),
     onSuccess: async (r: any) => {
-      setNote(""); setOpenDay(null);
+      setNote(""); setOpenDay(null); setValidationError(null);
       setBurst(true); setTimeout(()=>setBurst(false), 1200);
       qc.invalidateQueries({ queryKey: ["journey", slug] });
       qc.invalidateQueries({ queryKey: ["userTracks"] });
@@ -282,10 +296,25 @@ function JourneyView({ slug, data }: any) {
 
           {!today.completed_at ? (
             <div className="mt-5">
-              <textarea value={note} onChange={e=>setNote(e.target.value)}
+              <textarea
+                value={note}
+                onChange={e => { setNote(e.target.value); setValidationError(null); }}
                 placeholder={today.checkin_prompt}
-                className="w-full rounded-2xl bg-input border border-border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition" />
-              <button onClick={()=>complete.mutate(today.id)} disabled={complete.isPending}
+                className={`w-full rounded-2xl bg-input border p-4 text-sm outline-none focus:ring-2 focus:ring-ring min-h-[88px] transition ${validationError ? "border-[color:var(--hue-red)] ring-1 ring-[color:var(--hue-red)]" : "border-border"}`} />
+              {validationError && (
+                <p className="mt-2 text-sm font-medium text-[color:var(--hue-red)] shake">{validationError}</p>
+              )}
+              <button
+                onClick={() => {
+                  const trimmed = note.trim();
+                  if (!trimmed) {
+                    const msg = WARNINGS[Math.floor(Math.random() * WARNINGS.length)];
+                    setValidationError(msg);
+                    return;
+                  }
+                  complete.mutate(today.id);
+                }}
+                disabled={complete.isPending}
                 className={`btn-chunk mt-4 rounded-full text-white px-7 py-3.5 text-sm font-bold disabled:opacity-50 inline-flex items-center gap-2 ${complete.isPending ? "breathe" : ""}`}
                 style={{ background: trackHueGradient(slug), boxShadow: `0 16px 36px -10px color-mix(in oklab, var(${trackHueVar(slug)}) 65%, transparent)` }}>
                 <Check className="h-4 w-4"/> {complete.isPending ? "Listening…" : `Complete day ${today.day_number}`}
