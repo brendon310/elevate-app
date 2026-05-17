@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabase } from "@/integrations/supabase/client";
 
 export const getPublicCatalog = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("tracks_catalog")
       .select("id,slug,name,category,short_description,sort_order")
       .order("sort_order");
