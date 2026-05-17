@@ -39,7 +39,7 @@ function Landing() {
             Built for the version of you that's already begun.
           </p>
           <div className="mt-12 flex flex-wrap items-center gap-5">
-            <Link to="/login" className="btn-chunk group inline-flex items-center gap-2 rounded-full grad-electric px-8 py-4 text-sm font-bold text-white shadow-[var(--shadow-violet)]">
+            <Link to="/begin" className="btn-chunk group inline-flex items-center gap-2 rounded-full grad-electric px-8 py-4 text-sm font-bold text-white shadow-[var(--shadow-violet)]">
               Begin <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition" />
             </Link>
             <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
