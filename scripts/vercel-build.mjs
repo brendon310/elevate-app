@@ -78,6 +78,7 @@ module.exports = async function handler(req, res) {
     res.statusCode = 500; res.end('Internal Server Error');
   }
 };
+`;
 
 writeFileSync(`${out}/functions/index.func/index.js`, handlerCode);
 console.log('✓ Created handler wrapper');
