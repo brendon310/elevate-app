@@ -29,10 +29,12 @@ if (existsSync(clientDir)) {
 // Bundle server into single self-contained file using esbuild
 const serverEntry = `${root}/dist/server/server.js`;
 if (existsSync(serverEntry)) {
-  const esbuildBin = `${root}/node_modules/.bin/esbuild`;
   const bundleOut = `${out}/functions/index.func/server-bundle.js`;
+  // Resolve esbuild: prefer local bin, fall back to npx
+  const localBin = `${root}/node_modules/.bin/esbuild`;
+  const esbuildCmd = existsSync(localBin) ? `"${localBin}"` : `npx --yes esbuild`;
   execSync(
-    `"${esbuildBin}" "${serverEntry}" --bundle --platform=node --format=cjs --outfile="${bundleOut}"`,
+    `${esbuildCmd} "${serverEntry}" --bundle --platform=node --format=cjs --outfile="${bundleOut}"`,
     { stdio: 'inherit', cwd: root }
   );
   console.log('✓ Bundled server with esbuild');
