@@ -1,44 +1,31 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+// Public demo build — no real authentication.
+// AuthProvider and useAuth are stubs that return a fixed demo user
+// so all existing enabled: !!user query guards work unchanged.
+import type { ReactNode } from "react";
 
-type Ctx = {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
+const DEMO_USER_ID = "11111111-1111-1111-1111-111111111111";
+
+type DemoUser = {
+  id: string;
+  email: string;
+  user_metadata: { full_name: string; display_name: string };
+} | null;
+
+const DEMO_USER: DemoUser = {
+  id: DEMO_USER_ID,
+  email: "demo@elevate.app",
+  user_metadata: { full_name: "Demo User", display_name: "Demo" },
 };
 
-const AuthCtx = createContext<Ctx>({ user: null, session: null, loading: true, signOut: async () => {} });
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-      setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return (
-    <AuthCtx.Provider
-      value={{
-        user: session?.user ?? null,
-        session,
-        loading,
-        signOut: async () => { await supabase.auth.signOut(); },
-      }}
-    >
-      {children}
-    </AuthCtx.Provider>
-  );
+  return <>{children}</>;
 }
 
-export const useAuth = () => useContext(AuthCtx);
+export function useAuth() {
+  return {
+    user: DEMO_USER,
+    session: null,
+    loading: false,
+    signOut: async () => {},
+  };
+}

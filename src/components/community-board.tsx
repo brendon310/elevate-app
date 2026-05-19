@@ -262,3 +262,5 @@ export function CommunityBoard({
     </section>
   );
 }
+
+

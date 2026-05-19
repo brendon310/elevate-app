@@ -1,18 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { ArrowRight } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/")({ component: Landing });
 
 function Landing() {
-  const { user, loading } = useAuth();
-  const nav = useNavigate();
-  useEffect(() => { if (!loading && user) nav({ to: "/app" }); }, [user, loading, nav]);
-
   return (
     <div className="relative min-h-screen overflow-x-hidden text-foreground">
-      {/* warm ambient backdrop */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px]
         bg-[radial-gradient(70%_60%_at_50%_-10%,oklch(0.62_0.215_275_/_0.5),transparent_70%),radial-gradient(40%_50%_at_85%_10%,oklch(0.70_0.215_340_/_0.35),transparent_60%),radial-gradient(40%_40%_at_15%_30%,oklch(0.82_0.165_165_/_0.20),transparent_70%)]" />
 
@@ -23,7 +16,9 @@ function Landing() {
           </div>
           <span className="font-display text-[18px] tracking-tight font-semibold">Elevate</span>
         </div>
-        <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition">Sign in</Link>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono">
+          <Eye className="h-3 w-3" /> Public demo
+        </span>
       </header>
 
       <main className="container mx-auto px-6 relative">
@@ -42,13 +37,12 @@ function Landing() {
             <Link to="/begin" className="btn-chunk group inline-flex items-center gap-2 rounded-full grad-electric px-8 py-4 text-sm font-bold text-white shadow-[var(--shadow-violet)]">
               Begin <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition" />
             </Link>
-            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
-              Already on the path →
-            </Link>
+            <span className="text-sm text-muted-foreground">
+              Read-only · everything you see is shared
+            </span>
           </div>
         </section>
 
-        {/* editorial trio — overlapping */}
         <section className="relative pb-32 max-w-5xl">
           <div className="grid md:grid-cols-12 gap-6">
             <article className="md:col-span-7 warm-card rounded-[2rem] p-8 md:p-10 relative ambient-warm">

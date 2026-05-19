@@ -605,3 +605,4 @@ function DayPanel({ label, hue, children }: { label: string; hue: string; childr
     </div>
   );
 }
+
